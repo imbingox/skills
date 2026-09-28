@@ -33,23 +33,25 @@ disable-model-invocation: true
 
 当前 `/implement <target>` session 是 **Controller**。
 
-Controller 是目标 issue 及本次编排范围内 child issues 的唯一 workflow-state writer：
+Controller 是目标 issue 及本次编排范围内 child issues 的唯一 workflow-state writer。**具体状态机、labels、assignee、open/closed 语义和终态名称必须来自项目的 issue tracker 配置，不由本 skill 发明。**
 
 - Implementer 只返回实现事实、commit 和验证结果。
 - Reviewer 只返回 review verdict 和 findings。
 - Implementer / Reviewer 都不得自行 close issue、标 done、解除 blocker 或修改 authoritative workflow state。
-- Controller 只有在独立 review 通过并完成要求的 verification 后，才可把对应 issue 标记为 done / closed。
-- Parent 只有在所有 child accepted、最终 integration review 通过且 parent-level verification 通过后，才可标 done / closed。
+- Controller 只有在独立 review 通过并完成要求的 verification 后，才可把对应 issue推进到 tracker 定义的下一合法状态或终态。
+- Parent 只有在所有 child 达到 tracker 定义的完成条件、最终 integration review 通过且 parent-level verification 通过后，才可推进到 parent 的终态。
 
-概念状态：
+下面只是一套**内部概念状态**，用于 Controller 推理，不代表 tracker 必须真的存在这些名字：
 
-`ready → in-progress → in-review → done`
+`ready → in-progress → in-review → accepted`
 
 review fail 时：
 
 `in-review → in-progress`
 
-优先使用项目 tracker 已有的状态 / labels / assignee 约定；**不要为了这个 skill 擅自创建新 labels**。如果 tracker 只有 open / closed，前几个状态可以仅作为 Controller 内部状态，`done` 映射为 close。
+真正写回 tracker 时，读取 `docs/agents/issue-tracker.md` 或等价配置，将这些阶段映射到项目现有的状态、labels、assignee、project field、open/closed 等机制。**不要为了这个 skill 擅自创建新的 workflow vocabulary。**
+
+如果 tracker 没有中间状态，Controller 可以只在内部维护 `in-progress / in-review / accepted`，最终只执行配置里定义的终态动作。
 
 用户显式要求“不改 tracker / 不关 issue”时，以用户要求为准，但仍执行相同 review gate，并报告本来会发生的状态转换。
 
@@ -67,9 +69,9 @@ Leaf mode 下，主 session 同时承担 Controller 与 Implementer；**Reviewer
    - Standards：项目约定、命名、重复逻辑、边界、过度抽象、测试是否绑定实现细节。
    - Spec：验收条件是否完整实现、`Proposed Changes` / external contract / compatibility 是否兑现、是否 scope creep。
 6. review fail：Controller 将 findings 交回当前 Implementer 修复，然后重新 review。
-7. review pass：Controller 运行最终 verification；通过后标记目标 done / closed。
+7. review pass：Controller 运行最终 verification；通过后按 tracker 配置推进到该 issue 的完成状态。
 
-如果当前 harness 无法启动独立 reviewer agent，可以完成实现和测试，但**不得把 issue 标 done**；明确报告“等待独立 review”。
+如果当前 harness 无法启动独立 reviewer agent，可以完成实现和测试，但**不得把 issue 推进到 tracker 定义的完成状态**；明确报告“等待独立 review”。
 
 ## 4. Parent mode: 执行 child issue DAG
 
@@ -78,8 +80,8 @@ Parent mode 下，主 session只做 Controller / Orchestrator，不直接把整�
 ### 4.1 建图与 frontier
 
 - 从 tracker 读取 child issues、blocking edges 和状态。
-- 已 done 的 child 视为已满足。
-- **Frontier** = 当前所有 blockers 均已 done / accepted 的未完成 child。
+- 已达到 tracker 定义的完成状态、或已被 Controller 明确 accepted 的 child，视为已满足。
+- **Frontier** = 当前所有 blockers 均已满足的未完成 child。
 - 每轮 child 状态变化后重新计算 frontier。
 
 ### 4.2 是否并行
@@ -109,14 +111,14 @@ Parent mode 下，主 session只做 Controller / Orchestrator，不直接把整�
 4. Controller 标记 in-review，并派一个**没有参与该 child 实现的独立 Reviewer sub-agent**。
 5. Reviewer 基于 child spec、parent 约束和实际 diff 做 Standards + Spec review。
 6. review fail：Controller 把 findings 交回**原 Implementer**修复，再进入独立 review；child 不解锁 downstream。
-7. review pass + child verification pass：Controller 标记 child done / closed。
+7. review pass + child verification pass：Controller 按 tracker 配置推进 child 到其完成状态。
 8. 重新计算 frontier，继续下一轮。
 
-只有 **accepted / done** 的 child 才能解除下游 blocker；“代码写完”或“测试通过”都不够。
+只有达到 **accepted / tracker-complete** 条件的 child 才能解除下游 blocker；“代码写完”或“测试通过”都不够。
 
 ## 5. Parent integration review
 
-所有 child done 后，不能直接关闭 parent。
+所有 child 达到 tracker 定义的完成条件后，不能直接把 parent 推进到终态。
 
 Controller 先将各 child 成果集成到目标分支 / workspace，并启动一个**独立 Parent Integration Reviewer**。它不重复逐行审每个 child，而重点检查组合后的系统：
 
@@ -132,7 +134,7 @@ review fail 时：
 - 如果问题说明某个已 accepted child 实际未满足自己的 contract，Controller 重新打开 / 退回该 child，并交给原 Implementer 修复；
 - 如果是纯跨 child integration 问题，由 Controller 指派 integration fix，不能偷偷改 parent spec。
 
-integration review 通过后，运行 parent-level tests / smoke / end-to-end verification。全部通过后，Controller 才可标 parent done / closed。
+integration review 通过后，运行 parent-level tests / smoke / end-to-end verification。全部通过后，Controller 才可按 tracker 配置推进 parent 到终态。
 
 ## 6. 实现纪律：行为测试优先
 
