@@ -1,10 +1,11 @@
 # Repository instructions
 
 这是 imbingox/skills 的精简 fork，不再维护上游完整技能目录。
-当前只导出 skills/engineering 下的 grill-with-docs、to-spec、implement，均为 user-invoked。
-README、工程目录 README、docs/engineering 和 .claude-plugin/plugin.json 必须与这三个入口一致。
+当前只导出 skills/engineering 下的 setup、grill-with-docs、to-spec、implement，均为 user-invoked。
+README、工程目录 README、docs/engineering 和 .claude-plugin/plugin.json 必须与这四个入口一致。
 
 - 默认中文说明，英文目录、name 和技术标识符保持稳定。
+- setup 是 run once per repo 的 bootstrap：项目 tracker/domain 必配，用户级 CLI statusline 只做幂等检查与缺失补齐。
 - to-spec 内置按需拆票；Proposed Changes 优先外部用法与兼容性。
 - 必要纪律内置到入口或该入口的 references 内，不自动恢复已移除的 skill。
 - 每个 skill 单独安装也必须能用；相对资源链接不能越过该 skill 的目录去依赖兄弟目录或仓库根文件。
