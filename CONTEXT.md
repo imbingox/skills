@@ -1,6 +1,6 @@
 # Domain glossary
 
-- **Skill entry**：用户显式调用的工作流入口。本 fork 只有 grill-with-docs、to-spec、implement。
+- **Skill entry**：可安装、按各自策略手动或自动调用的工作流或参考入口。入口清单以 [README](README.md) 为准。
 - **Proposed Changes**：计划中的外部变化摘要，不表示已经实现或已经验收。
 - **Spec**：整体目标、外部契约、约束与验收决策的持久记录。
 - **Ticket**：受 spec 约束、可独立验证的实施切片，不是第二份产品规格。

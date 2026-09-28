@@ -3,12 +3,11 @@
   "owner": {
     "name": "bingo"
   },
-  "description": "Bingo engineering skills, derived from mattpocock/skills.",
   "plugins": [
     {
       "name": "bingo-skills",
       "source": "./",
-      "description": "Setup, grill, spec with optional tickets, and orchestrated implementation.",
+      "description": "Setup, grill, spec, orchestrated implementation, bug diagnosis, and agent-document writing guidance.",
       "category": "engineering",
       "keywords": [
         "engineering",
@@ -17,5 +16,8 @@
         "setup"
       ]
     }
-  ]
+  ],
+  "metadata": {
+    "description": "Bingo Skills: independently maintained engineering workflows."
+  }
 }

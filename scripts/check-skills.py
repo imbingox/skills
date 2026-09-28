@@ -9,7 +9,9 @@ import sys
 from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED = {'setup', 'grill-with-docs', 'to-spec', 'implement'}
+MANUAL = {'setup', 'grill', 'to-spec', 'implement', 'diagnosing-bugs'}
+AUTOMATIC = {'writing-for-agents'}
+EXPECTED = MANUAL | AUTOMATIC
 errors: list[str] = []
 
 
@@ -27,16 +29,20 @@ def read(path: Path) -> str:
 
 
 skills = sorted((ROOT / 'skills').rglob('SKILL.md'))
-require({p.parent.name for p in skills} == EXPECTED and len(skills) == 4,
-        'Exactly the four curated skill entries must be discoverable')
+require({p.parent.name for p in skills} == EXPECTED and len(skills) == len(EXPECTED),
+        'Exactly the curated skill entries must be discoverable')
 
 for path in skills:
+    require(path.parent.parent == ROOT / 'skills', f'{path}: skill must be directly under skills/')
     text = read(path)
     parts = text.split('---', 2)
     require(len(parts) == 3 and parts[0] == '', f'{path}: invalid frontmatter')
     front = parts[1] if len(parts) == 3 else ''
     require(f'name: {path.parent.name}\n' in front, f'{path}: name mismatch')
-    require('disable-model-invocation: true' in front, f'{path}: implicit invocation enabled')
+    automatic = path.parent.name in AUTOMATIC
+    invocation = re.findall(r'^disable-model-invocation:\s*(.*?)\s*$', front, re.MULTILINE)
+    require(invocation == ([] if automatic else ['true']),
+            f'{path}: incorrect Claude invocation policy')
     description = re.search(r'^description: (.+)$', front, re.MULTILINE)
     try:
         require(description is not None and bool(json.loads(description.group(1))),
@@ -44,8 +50,9 @@ for path in skills:
     except (ValueError, AttributeError):
         errors.append(f'{path}: invalid description')
     policy = read(path.parent / 'agents/openai.yaml')
-    require(policy.strip() == 'policy:\n  allow_implicit_invocation: false',
-            f'{path}: explicit-invocation policy missing')
+    expected_policy = 'true' if automatic else 'false'
+    require(policy.strip() == f'policy:\n  allow_implicit_invocation: {expected_policy}',
+            f'{path}: incorrect Codex invocation policy')
     for doc in path.parent.rglob('*.md'):
         body = re.sub(r'```.*?```', '', read(doc), flags=re.DOTALL)
         for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', body):
@@ -59,16 +66,19 @@ for path in skills:
 try:
     plugin = json.loads(read(ROOT / '.claude-plugin/plugin.json'))
     marketplace = json.loads(read(ROOT / '.claude-plugin/marketplace.json'))
-    paths = [f'./skills/engineering/{name}' for name in EXPECTED]
+    paths = [f'./skills/{name}' for name in EXPECTED]
     require(sorted(plugin['skills']) == sorted(paths), 'Plugin skill list differs from curated set')
-    require(plugin['name'] == 'bingo-skills', 'Fork plugin identity is incorrect')
+    require(plugin['name'] == 'bingo-skills', 'Plugin identity is incorrect')
+    require(plugin['repository'] == 'https://github.com/imbingox/skills',
+            'Plugin repository must target this repository')
+    require(re.fullmatch(r'\d+\.\d+\.\d+', plugin['version']) is not None,
+            'Plugin version must use major.minor.patch')
     require(marketplace['plugins'][0]['name'] == plugin['name'], 'Marketplace/plugin mismatch')
-    require(marketplace['plugins'][0]['source'] == './', 'Marketplace must target this fork')
+    require(marketplace['plugins'][0]['source'] == './', 'Marketplace must target this repository')
 except (ValueError, KeyError, IndexError, TypeError) as exc:
     errors.append(f'Invalid plugin manifest: {exc}')
 
-for doc in [ROOT / 'README.md', ROOT / 'CLAUDE.md', ROOT / 'skills/engineering/README.md',
-            *sorted((ROOT / 'docs').rglob('*.md'))]:
+for doc in [ROOT / 'README.md', ROOT / 'AGENTS.md', ROOT / 'CONTEXT.md']:
     body = re.sub(r'```.*?```', '', read(doc), flags=re.DOTALL)
     for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', body):
         if urlparse(target).scheme or target.startswith('#'):
@@ -76,11 +86,8 @@ for doc in [ROOT / 'README.md', ROOT / 'CLAUDE.md', ROOT / 'skills/engineering/R
         require((doc.parent / unquote(target.split('#')[0])).exists(),
                 f'{doc}: broken documentation link: {target}')
 
-for name in EXPECTED:
-    require((ROOT / f'docs/engineering/{name}.md').exists(), f'Missing docs for {name}')
-
 if errors:
     print('\n'.join(f'ERROR: {error}' for error in errors), file=sys.stderr)
     raise SystemExit(1)
-print('PASS: 4 skill entries, explicit invocation, standalone references, manifests and docs')
+print(f'PASS: {len(EXPECTED)} skill entries, invocation policies, standalone references, manifests and docs')
 print('Static checks only; agent behavior and live installation are not exercised.')
