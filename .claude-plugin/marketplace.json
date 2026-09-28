@@ -1,22 +1,19 @@
 {
-  "name": "mattpocock",
+  "name": "imbingox",
   "owner": {
-    "name": "Matt Pocock",
-    "url": "https://www.aihero.dev"
+    "name": "bingo"
   },
-  "description": "Matt Pocock's skills for real engineering, as an installable Claude Code plugin.",
+  "description": "Bingo engineering skills, derived from mattpocock/skills.",
   "plugins": [
     {
-      "name": "mattpocock-skills",
+      "name": "bingo-skills",
       "source": "./",
-      "description": "Matt Pocock's agent skills for real engineering (grilling, spec/ticket flows, TDD, code review, domain modelling and more).",
+      "description": "Grill, spec with optional tickets, and implement.",
       "category": "engineering",
       "keywords": [
         "engineering",
         "skills",
-        "tdd",
-        "code-review",
-        "grilling"
+        "spec"
       ]
     }
   ]

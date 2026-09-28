@@ -1,15 +1,56 @@
 ---
 name: implement
-description: "Implement a piece of work based on a spec or set of tickets."
+description: "按已确认的 spec 或 ticket 实施，内置行为测试和 Standards / Spec 双轴自审，不依赖额外 skill。"
 disable-model-invocation: true
 ---
 
-Implement the work described by the user in the spec or tickets.
+# Implement
 
-Use /tdd where possible, at pre-agreed seams.
+实现用户指定的工作，不把实施阶段变成重新设计需求的机会。
+默认用中文报告，保留项目已有技术标识符。测试和自审已内置，不调用已移除的 skill。
 
-Run typechecking regularly, single test files regularly, and the full test suite once at the end.
+## 1. 读取范围与执行边界
 
-Once done, use /code-review to review the work.
+读取项目 AGENTS.md / CLAUDE.md、相关 glossary / ADR 和 spec / ticket 的全文及评论。
+通过项目现有 `docs/agents/issue-tracker.md` 或等价配置访问 tracker；只有明确的文件输入时不强制要求 tracker。
+缺配置时核对用户明确目标、仓库和可用工具，不能凭猜测写到上游或其他项目；不可访问则报告缺少的证据。
 
-Commit your work to the current branch.
+子票要读取父 spec 的约束和真实 blockers。只做用户选定、前置条件已满足的工作；ready-for-agent 不会自动解除 blockers。
+父 spec 有多个子票时不要直接包办整张父票；按用户指定范围或已有执行顺序推进。
+读取 Proposed Changes（如有）及完整验收条件；旧版 spec 没有这个标题也正常支持，不要求重写。
+记录实施起点 commit、当前分支、已有工作区修改和适用的基线检查结果，保护用户尚未提交的工作。
+
+## 2. 对外契约不能偷偷改
+
+保持已确认的 API、CLI、UI、config/env、输入输出、错误、默认值、完成语义、旧数据与迁移承诺。
+发现设计不可行或必须改变外部契约时，先指出影响和替代方案并取得确认，不实现完再解释。
+测试 seam 优先沿用 spec 已定的 public boundary；没有明确 seam 时从现有稳定接口提出最小可行方案，仅在实质歧义时确认。
+未经单独授权不访问生产凭据、真实账户，不下实盘订单，不运行破坏性迁移或发布部署。
+
+## 3. 以行为测试推进
+
+尽可能一条行为测试 → 验证因目标行为缺失而失败 → 最小实现使其通过，再进入下一条行为。
+修 bug 先建立能复现问题的回归测试；不要一次写完所有想象中的测试再一次性实现。
+测试通过 public seam 观察结果，不绑定 private helpers、内部调用次数或类拆分。
+期望值来自独立样例或 spec，不在断言里复制实现公式。只在外部系统边界隔离网络、时间或存储，不用内部 mock 假装业务跑通。
+覆盖关键成功、失败、兼容 / 迁移及异步状态路径；不是要求穷举所有边界。
+纯文档、配置或无法合理 TDD 的工作使用适当静态检查 / smoke test，并说明偏离及验证限制。
+持续运行相关小范围测试与类型检查，最后运行项目要求的完整检查。实际没跑或因环境失败的检查不能记为通过。
+
+## 4. 内置双轴自审
+
+基于实施起点检查本次实际改动，包含未提交的 tracked 修改和本次新文件；不能只看 HEAD 而漏掉工作区。
+逐项区分本次改动与开始前已有的用户修改。不要把别人的改动纳入修复或提交。
+
+**Standards**：对照项目约定、命名、重复逻辑、边界和过度抽象检查。工具已覆盖的格式问题不重复点评；设计气味是判断，不是自动违规。
+**Spec**：逐项检查遗漏、错误实现、范围扩大，以及 Proposed Changes / 兼容承诺是否兑现；不要为了让实现通过而改写需求。
+
+有 sub-agent 能力时可分开审两轴，没有时依次独立检查。未使用独立 reviewer 时如实说明是自审。
+修复后重新运行受影响检查；不能修复的项明确报告，不把“测试通过”当作“符合需求”的替代。
+
+## 5. 提交与交接
+
+遵守项目分支保护和用户的提交策略。默认只提交本次相关改动到当前允许写入的分支；不要 git add 全部工作区。
+不要未经授权 push、merge、关闭 issue 或改其完成状态。实施授权不等于上述额外操作授权。
+报告实际行为变化、契约 / 兼容影响、验证证据、未解决问题和 commit（如已提交）。
+纯计划、测试未通过、外部验收未执行时，分别写清楚，不能宣称已完成相应验收。
