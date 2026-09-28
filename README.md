@@ -39,11 +39,11 @@ grill → to-spec → implement
 
 五个工作流入口均为 user-invoked；另有一个可自动或手动调用的 writing-for-agents。domain modeling、codebase-design、测试和 code review 的必要纪律已收进日常入口，不需要单独安装或调用。模块设计原则由 grill 和 implement 按需读取各自随包参考。
 
-防止过度设计的约束同样内置：`grill` 检查是否已有更简单的达成方式，`to-spec` 固定当前范围，`implement` 与 review 检查新增复杂性的依据，`diagnosing-bugs` 控制根因修复范围。无需额外安装 ponytail；精简以满足已确认需求为前提，不按代码行数评价，也不削减兼容、安全或必要测试。
+这些准则分别落在 `grill`（有无更简单的达成方式）、`to-spec`（固定当前范围）、`implement` 与 review（新增复杂性的依据）和 `diagnosing-bugs`（根因修复范围）中，无需额外安装 ponytail。
 
 发现 bug 可直接调用 `/diagnosing-bugs <症状 / 日志 / 失败测试>`，不需要先写 spec、建 issue 或运行 setup。仅调查时说“只排查”；该入口不自动更新 tracker，也不套用 implement 的 DAG 编排流程。
 
-`implement` 自动选择 Leaf / Parent，不需要额外模式开关。Parent 编排和 review 细节按需读取随包参考；Leaf 完成独立 review 与最终验证后提交目标范围修改，再按项目规则推进状态。用户明确要求不提交时遵从，提交不包含 push、merge 或部署。
+`implement` 自动选择 Leaf / Parent，不需要额外模式开关。Leaf 完成独立 review 与最终验证后提交到当前分支，再按项目规则推进状态；测试遵循随包的 TDD 参考（垂直切片、只在系统边界 mock），review 带 Fowler 坏味道基线。用户明确要求不提交时遵从，提交不包含 push、merge 或部署。
 
 `implement` 中由 Controller 独占 issue workflow state，Implementer / Reviewer 只报告事实；具体状态与终态动作由当前项目的 issue tracker 配置决定，所有实现都必须经过独立 reviewer 才能进入完成状态。
 
@@ -62,7 +62,9 @@ grill → to-spec → implement
 
 `implement` 默认由一个独立 Reviewer 分别检查 Standards 与 Spec，复杂改动可拆成两位；任一轴失败都修复并复审。没有独立 reviewer 能力时可以实现和测试，但报告“等待独立 review”，不推进完成状态。
 
-Parent 只在依赖已验收且对应代码可用后派发下游；无 blocker 不等于一定并行，还要满足修改范围低重叠和 workspace 隔离。全部 child 完成后仍需组合层 review 与验证。
+Parent 从当前分支创建本地集成分支 `implement/<parent>`，在专门的集成 worktree 中合入，不在主工作区 checkout 或 merge。每个 child 在从集成分支创建的独立 worktree 中实现并提交，验收后用 `git merge --no-ff` 合入，下游从合入后的分支开始，因此自带已验收的依赖代码。无 blocker 不等于一定并行，还要满足修改范围低重叠。全部 child 完成后仍需组合层 review 与验证，最后把当前分支 `--ff-only` 快进到集成结果；要求“不提交”时结果只留在 `implement/<parent>`，当前分支不动。
+
+检测到 Orca runtime 时，Parent 用 Orca orchestration 派发 worker 和建 worktree，新 worktree 执行 Orca 仓库设置的 setup 命令；该命令为空或不用 Orca 时，有 `setup_env.sh` 就执行它。不用 Orca 时由 Controller 执行 `git worktree add`，派 harness sub-agent。child 合入后清理其 worktree 和分支；review 失败或编排暂停时保留，方便检查。
 
 `diagnosing-bugs` 从未知原因的症状开始，默认完成诊断与范围内修复；“只排查”只给根因、证据和建议。无法复现时报告已尝试的方法和缺失证据，不凭猜测修改。修复后重跑原始场景并清理临时探针。
 
@@ -86,7 +88,7 @@ Parent 只在依赖已验收且对应代码可用后派发下游；无 blocker �
     └── Claude Code statusline
 ```
 
-Project setup 优先沿用项目说明指向的 tracker / domain 配置；没有既有配置时才默认写入 `docs/agents/issue-tracker.md` 与 `docs/agents/domain.md`。`CLAUDE.md` / `AGENTS.md` 中的简短指针指向实际配置位置，不强制迁移。
+Project setup 优先沿用项目说明指向的 tracker / domain 配置；没有既有配置时，按 provider（GitHub / GitLab / 本地 markdown）复制随包模板写入 `docs/agents/issue-tracker.md`，并写入 `docs/agents/domain.md`。`CLAUDE.md` / `AGENTS.md` 中的简短指针指向实际配置位置，不强制迁移。
 
 默认 statusline 对齐为模型 / 推理强度、剩余上下文、当前目录、Git 分支、权限。Claude 缺失实时权限字段时省略该项；不再默认显示 5h / 7d 额度。
 
@@ -137,9 +139,9 @@ npx skills@latest add imbingox/skills --list
 ## Issue tracker
 
 Issue / spec 放在哪里由每个业务项目自己的 `docs/agents/issue-tracker.md` 或项目说明指向的已有等价配置定义，不放在 skills repo。
-`setup` 负责初始化 / 校验它；`to-spec` 和 `implement` 只消费它，不自行猜发布目标或 workflow。
+只有 `setup` 写这份配置：它按 provider 模板记录具体操作（读取、查重、新建、挂子票、加 / 读 blocker、推进状态、关闭）和 workflow（真实状态、ready 标签、完成条件、Controller 可执行的动作）。`to-spec` 和 `implement` 只按其中的操作执行，不自行猜发布目标、命令或状态机。
 
-配置至少明确 provider / target、读写方式、父子关系、阻塞依赖、现有状态与完成条件，以及 Controller 可执行的状态转换。已有配置和人工编辑保留，不强制 schema 迁移。
+原生子票 / 依赖关系不可用时，配置写明文本表达（`Parent:` / `Blocked by:`）。已有配置和人工编辑保留，不强制 schema 迁移；也可以直接手动编辑配置。
 
 `to-spec` 远程发布、`implement` 写 tracker 状态前需要明确配置；缺失时提示 `/setup`，不猜目标。只预览和不涉及 tracker 的本地实施可独立进行。工具不可用或部分发布失败时报告真实结果，不假报成功。
 

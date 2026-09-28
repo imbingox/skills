@@ -6,128 +6,85 @@ disable-model-invocation: true
 
 # Implement
 
-实现用户指定的 issue / spec，不把实施阶段变成重新设计需求的机会。
-默认用中文报告，保留项目已有技术标识符。
+实现用户指定的 issue / spec，不把实施阶段变成重新设计需求的机会。默认用中文报告，保留项目已有技术标识符。
 
-核心模型：
-
-> **Controller 管状态，Implementer 写代码，Reviewer 独立验收。**
-
-> **每份实现都必须由没有参与该实现的独立 reviewer agent 审查；只有 Controller 可以改变 issue workflow state。**
+> **Controller 管状态，Implementer 写代码，Reviewer 独立验收。** 每份实现都由没有参与该实现的独立 reviewer agent 审查；只有 Controller 可以改变 issue workflow state。
 
 ## 1. 读取目标并自动选择模式
 
-先读取项目的 `AGENTS.md` / `CLAUDE.md`、相关 glossary / ADR、目标 issue / spec 全文及评论，以及项目现有 `docs/agents/issue-tracker.md` 或等价 tracker 配置。若目标依赖远程 issue workflow 但当前 repo 没有明确 tracker 配置，停止状态写入并提示先运行 `/setup`；不要自行猜 repo 或状态机。
+读取项目 `AGENTS.md` / `CLAUDE.md`、相关 glossary / ADR、目标 issue / spec 全文及评论，以及项目 tracker 配置（项目说明指向的文件，其次 `docs/agents/issue-tracker.md`）。读取 issue、列子票、读 blocker、推进状态和关闭都按该配置中的操作执行；配置只有自然语言描述、缺少具体命令时（例如旧版 setup 生成的配置），按其描述用对应 provider 的标准工具执行，并建议重跑 `/setup` 补齐；不因此阻塞。目标在远程 tracker 上但找不到配置时，不写任何状态，提示先运行 `/setup`；不要自行猜 repo 或状态机。
 
-读取 `Proposed Changes`、完整验收条件、父子关系和真实 blockers。旧 spec 没有 `Proposed Changes` 也正常支持。
-
-自动判断：
+读取 `Proposed Changes`（旧 spec 没有也正常）、完整验收条件、父子关系和真实 blockers，然后自动选择：
 
 - **Leaf mode**：目标没有需要编排的 child issues，直接实现当前目标。
-- **Parent mode**：目标存在 child issues / ticket graph，当前 session 成为 orchestrator，消费已有 DAG。
+- **Parent mode**：目标有 child issues，读取 [orchestration.md](references/orchestration.md)，当前 session 作为 orchestrator 完成整组编排，无需用户额外开启。
 
-已有 issue graph 是已确认的执行计划。Implement 阶段默认**不重新拆票、不重排需求、不自行新增产品决策**。
-如果发现 blocker 错误、子票无法独立完成、spec 与代码事实冲突，或必须改变 external contract，暂停受影响分支并向用户说明。
+已有 issue graph 是已确认的执行计划：默认**不重新拆票、不重排需求、不自行新增产品决策**。
+发现 blocker 错误、子票无法独立完成、spec 与代码事实冲突，或必须改变 external contract 时，暂停受影响分支并向用户说明。
 
 ## 2. Workflow state 的唯一 owner
 
-当前 `/implement <target>` session 是 **Controller**。
+当前 `/implement <target>` session 是 **Controller**，也是目标及本次编排范围内 child issues 唯一的 workflow-state writer。状态、labels、终态和完成条件都来自 tracker 配置，不由本 skill 发明；没有中间状态时只在内部记录进度。
 
-Controller 是目标 issue 及本次编排范围内 child issues 的唯一 workflow-state writer。**具体状态机、labels、assignee、open/closed 语义和终态名称必须来自项目的 issue tracker 配置，不由本 skill 发明。**
+- Implementer 只返回实现事实、commit 和验证结果；Reviewer 只返回 verdict 和 findings。两者都不 close issue、不改状态、不解除 blocker。
+- 一个 issue 只有在独立 review 通过、要求的 verification 通过、交付内容与审查内容一致后，才推进到完成状态。
+- 每次写 tracker 前重读该对象及其依赖 / 状态，只提交本次必要的最小变更，写后读回核对。人工改动使计划或状态转换失效时，暂停受影响分支并说明，不用旧快照覆盖；写入失败时如实报告，不假报推进成功。
 
-- Implementer 只返回实现事实、commit 和验证结果。
-- Reviewer 只返回 review verdict 和 findings。
-- Implementer / Reviewer 都不得自行 close issue、标 done、解除 blocker 或修改 authoritative workflow state。
-- Controller 只有在独立 review 通过并完成要求的 verification 后，才可把对应 issue推进到 tracker 定义的下一合法状态或终态。
-- Parent 只有在所有 child 达到 tracker 定义的完成条件、最终 integration review 通过且 parent-level verification 通过后，才可推进到 parent 的终态。
-
-每次更新 tracker 对象前，Controller 必须重新读取该对象、相关评论及当前依赖 / 状态，保留人工编辑和无关字段，只提交本次必要的最小变更。若发现人工改变了需求、blockers 或状态，使原计划或状态转换失效，暂停受影响分支并说明冲突，不用旧快照覆盖。写入后读回核对；失败或并发冲突时先重读再决定是否重试，不能假报状态推进成功。
-
-按项目现有状态机执行合法转换，不发明 labels 或状态；没有中间状态时只在内部记录进度，完成后执行配置定义的终态动作。
-
-用户显式要求“不改 tracker / 不关 issue”时，以用户要求为准，但仍执行相同 review gate，并报告本来会发生的状态转换。
+用户要求“不改 tracker / 不关 issue”时照做，review gate 不变，并报告本来会执行的状态转换。
 
 ## 3. Leaf mode
 
-Leaf mode 下，主 session 同时承担 Controller 与 Implementer；**Reviewer 必须是独立 sub-agent**。
+主 session 同时是 Controller 和 Implementer；**Reviewer 必须是独立 sub-agent**。
 
-流程：
+1. 确认 blockers 已满足；记录起点 commit、当前分支和已有的未提交修改。
+2. 配置有对应状态时，标记 in-progress。
+3. 按第 4 节实现，持续运行相关测试 / typecheck。
+4. 配置有对应状态时标记 in-review；读取 [review.md](references/review.md)，启动未参与实现的独立 Reviewer。
+5. 任一轴不通过：修复后交给独立 Reviewer 复审。
+6. 两轴通过后运行最终 verification，把本次目标范围的修改提交到当前分支并记录 commit。提交失败不能宣告已交付；commit hook 改变内容时，补做受影响的 review 与验证。
+7. 按 tracker 配置推进完成状态。
 
-1. Controller 确认 blockers 已满足，记录实施起点 commit、当前分支和已有工作区修改。
-2. 如项目有对应状态约定，标记目标为 in-progress。
-3. 主 session 按 spec 实现，并持续做相关测试 / typecheck。
-4. 实现完成后按项目约定进入 review 阶段，读取 [review.md](references/review.md)，启动未参与实现的独立 Reviewer，分别检查 Standards 和 Spec。
-5. 任一轴不通过：将 findings 交回 Implementer 修复，再独立复审。
-6. 两轴通过后运行最终 verification，再提交本次目标范围的修改到当前工作分支，记录 commit。提交失败不能宣告已交付；commit hook 若改变内容，补做受影响的 review 与验证。
-7. Controller 核对最终交付与已审查 / 验证内容一致后，按 tracker 配置推进完成状态。
+用户明确要求“不提交”时保留未提交修改并如实报告；若完成条件要求 commit，则不推进终态。
+当前 harness 无法启动独立 reviewer agent 时，可以完成实现和测试，但报告“等待独立 review”，不推进完成状态。
 
-用户明确要求“不提交”时保留未提交修改并如实报告；若项目完成条件要求 commit，则不能推进终态。不访问 tracker 的本地 spec 只报告实现、review 与验证结果。
+## 4. 实现纪律
 
-如果当前 harness 无法启动独立 reviewer agent，可以完成实现和测试，但**不得把 issue 推进到 tracker 定义的完成状态**；明确报告“等待独立 review”。
-
-## 4. Parent mode
-
-目标有 child issues / DAG 时自动读取 [orchestration.md](references/orchestration.md)，继续完成整组编排，无需用户额外开启模式。
-Controller 负责 frontier、隔离 workspace、已验收依赖代码交付、child review 和最终 integration review；每个 child 由 sub-agent 实现。状态完成不能替代依赖代码可用。
-
-## 5. 实现纪律：行为测试优先
-
-涉及模块 / interface 设计、依赖组织、测试 seam 或重构时，Implementer 与相应 Reviewer 必须读取并应用本 skill 的 [codebase-design.md](references/codebase-design.md)。Controller 派发这些任务时附上该参考内容或可访问路径；不要求用户手动调用，不改变已确认 spec。
+本节同时约束 Parent mode 中的 Implementer sub-agent。
 
 选择最小充分实现：
 
 - 先读相关代码、真实调用链和约束，再判断是否需要新增代码；不能用小 diff 代替理解问题。
-- 优先检查项目已有实现，再检查标准库、平台原生能力和已安装依赖；能完整满足行为、兼容性与运行环境要求时直接复用。检查围绕当前任务，不扩展成全库审计。
-- 确实存在缺口才新增代码或依赖。新增通用层、工厂、配置项或扩展点要有当前用例或明确约束；不为假想未来预留框架。单一实现本身不是删除接口的理由，已有隔离边界、测试 seam 和项目约定仍可能需要它。
-- 以完整满足契约为前提减少维护负担，不追求最少文件或最短行数；不牺牲可读性、信任边界校验、安全、可访问性、防数据丢失处理和必要验证。
-- 验收满足且所需 review / verification 通过后停止扩展；不顺手重构相邻模块。确有已知容量或性能上限的取舍，记录具体限制和重访条件，不为每处简单实现添加说明。
+- 先复用项目已有实现，再看标准库、平台原生能力和已安装依赖；检查围绕当前任务，不扩展成全库审计。
+- 确实存在缺口才新增代码或依赖。新增通用层、工厂、配置项或扩展点要有当前用例或明确约束支撑；单一实现本身不是删除已有接口的理由，已有隔离边界、测试 seam 和项目约定仍可能需要它。
+- 以完整满足契约为前提减少维护负担，不追求最少行数；不牺牲可读性、信任边界校验、安全、可访问性、防数据丢失处理和必要验证。
+- 验收满足且 review / verification 通过后停止扩展，不顺手重构相邻模块。
 
-尽可能按：
+测试：
 
-`一条行为测试 → 因目标行为缺失而失败 → 最小实现使其通过 → 下一条行为`
+- 写测试前读取 [tdd.md](references/tdd.md)，能 TDD 时按垂直切片：`一条行为测试 → 因目标行为缺失而失败 → 最小实现使其通过 → 下一条`。修 bug 先写能复现问题的 regression test。
+- 覆盖关键成功、失败、兼容 / migration 和异步状态路径，不要求穷举边界。纯文档、配置或无法合理 TDD 的工作用静态检查 / smoke test，并说明验证限制。
+- 持续运行小范围测试与 typecheck，完成前运行项目要求的完整检查。没实际运行的检查不能记为通过。
 
-修 bug 先建立能复现问题的 regression test。
+涉及模块 / interface 设计、依赖组织、测试 seam 或重构时，读取并应用 [codebase-design.md](references/codebase-design.md)，不改变已确认 spec。
 
-测试通过 public seam 观察结果，不绑定 private helpers、内部调用次数或类拆分。期望值来自独立样例或 spec，不在断言里复制实现公式。
-
-覆盖关键成功、失败、兼容 / migration 和异步状态路径；不要求穷举所有边界。纯文档、配置或无法合理 TDD 的工作使用相应静态检查 / smoke test，并说明验证限制。
-
-持续运行相关小范围测试与 typecheck；每个 child 完成前跑其要求的完整检查，parent 最后再跑组合层 verification。没实际运行的检查不能记为通过。
-
-## 6. External contract 不得偷偷改变
+## 5. External contract 不得偷偷改变
 
 保持已确认的 API、CLI、UI、config/env、输入输出、错误、默认值、完成语义、旧数据与 migration 承诺。
-
-发现实现必须改变这些 contract 时，不让 implementer 自行拍板。Controller 暂停受影响分支，说明：
-
-- 原 contract；
-- 为什么不可行；
-- proposed change；
-- compatibility / migration 影响。
-
-取得用户确认并更新 spec 后再继续。
+实现必须改变这些 contract 时，不让 Implementer 自行拍板。Controller 暂停受影响分支，说明原 contract、为什么不可行、proposed change 和 compatibility / migration 影响；取得用户确认并更新 spec 后再继续。
 
 未经单独授权不访问生产凭据、真实账户，不下实盘订单，不运行破坏性迁移或生产发布。
 
-## 7. Git 与交接
+## 6. Git 与交接
 
-保护开始前已有的用户修改，不把无关工作纳入 commit。
+保护开始前已有的用户修改，不把无关工作纳入 commit。多个 sub-agent 不同时写同一个 working tree。
 
-并行 child 优先各自独立 worktree / branch；Implementer 只提交自己的工作。Controller 负责集成，不让多个 sub-agent 同时写一个 working tree。
-
-`/implement` 授权本次目标范围内必要的 issue workflow transitions，但**不自动授权**：
-
-- push 到远端；
-- merge PR；
-- production deploy / migration；
-- 修改目标图之外的 issue；
-- 改写已确认 spec。
+`/implement` 授权本次目标范围内的本地 commit 和必要的 issue workflow transitions，但**不自动授权** push、merge PR、production deploy / migration、修改目标图之外的 issue，或改写已确认 spec。
 
 最终报告：
 
 - 完成 / 未完成的 issues；
-- child review 与 parent integration review 结果；
+- 每份 review 与 parent integration review 的结果；
 - external contract / compatibility 的实际变化；
 - verification 证据；
-- commits / integration commit；
+- commits 与集成分支；
 - 任何未解决或未验证事项。

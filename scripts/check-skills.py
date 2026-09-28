@@ -78,6 +78,12 @@ try:
 except (ValueError, KeyError, IndexError, TypeError) as exc:
     errors.append(f'Invalid plugin manifest: {exc}')
 
+readme = read(ROOT / 'README.md')
+require(set(re.findall(r'\(skills/([\w-]+)/SKILL\.md\)', readme)) == EXPECTED,
+        'README entry table differs from curated set')
+require(set(re.findall(r'--skill ([\w-]+)', readme)) == EXPECTED,
+        'README install command differs from curated set')
+
 for doc in [ROOT / 'README.md', ROOT / 'AGENTS.md', ROOT / 'CONTEXT.md']:
     body = re.sub(r'```.*?```', '', read(doc), flags=re.DOTALL)
     for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', body):
@@ -89,5 +95,5 @@ for doc in [ROOT / 'README.md', ROOT / 'AGENTS.md', ROOT / 'CONTEXT.md']:
 if errors:
     print('\n'.join(f'ERROR: {error}' for error in errors), file=sys.stderr)
     raise SystemExit(1)
-print(f'PASS: {len(EXPECTED)} skill entries, invocation policies, standalone references, manifests and docs')
+print(f'PASS: {len(EXPECTED)} skill entries, invocation policies, standalone references, manifests, README and docs')
 print('Static checks only; agent behavior and live installation are not exercised.')

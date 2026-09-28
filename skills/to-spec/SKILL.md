@@ -28,8 +28,8 @@ disable-model-invocation: true
 区分已确认决策、可验证的现状和未决事项。检查现有 API、CLI、UI、config/env、schema、错误与状态语义、消息协议和持久化格式的调用方。
 测试优先使用已约定、已有且稳定的高层 public seam。不要重复确认已经同意的验收方式。
 
-tracker 的读取、配置兼容与发布规则见 [issue-tracker.md](references/issue-tracker.md)。发布前必须读取。若当前 repo 缺少 `docs/agents/issue-tracker.md` 或等价明确配置，停止远程发布并提示先运行 `/setup`；不要猜发布目标。
-有重大未决决策时明确标为待确认，不把猜测写成已定事实，也不标 ready-for-agent。
+读取已有 issue 和发布都按项目 tracker 配置（项目说明指向的文件，其次 `docs/agents/issue-tracker.md`）中的操作执行。缺少配置时停止远程发布并提示先运行 `/setup`，不要猜发布目标；只预览不受影响。
+有重大未决决策时明确标为待确认，不把猜测写成已定事实。
 
 ### 2. 先写 Proposed Changes
 
@@ -80,8 +80,4 @@ tracker 的读取、配置兼容与发布规则见 [issue-tracker.md](references
 
 ### 5. 发布并核对
 
-按 tracker 规则发布。单 issue 不另建父票；多票先建父 spec，再按依赖顺序建子票。
-重跑前查现有票，避免重复；只拆票模式不自动关闭、改写或重新创建父 spec。
-发布后读回并核对正文、真实链接与依赖。说明哪些已发布、哪些尚未发布或仍被阻塞。
-只对已明确可交给 agent 的实施票按项目约定加标签；父 spec 不自动标 ready-for-agent。
-ready-for-agent 不代表依赖已经完成，也不构成生产访问、真实交易、部署或数据迁移授权。
+发布前读取 [issue-tracker.md](references/issue-tracker.md)，按其中的查重、写入顺序、读回核对和标签规则执行。报告哪些已发布、哪些尚未发布或仍被阻塞。
