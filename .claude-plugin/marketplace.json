@@ -8,12 +8,13 @@
     {
       "name": "bingo-skills",
       "source": "./",
-      "description": "Grill, spec with optional tickets, and implement.",
+      "description": "Setup, grill, spec with optional tickets, and orchestrated implementation.",
       "category": "engineering",
       "keywords": [
         "engineering",
         "skills",
-        "spec"
+        "spec",
+        "setup"
       ]
     }
   ]
