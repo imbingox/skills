@@ -8,7 +8,7 @@ Tracker 是每个业务项目的配置，不是必须额外安装的 skill。
 
 优先使用用户明确指定的目标，其次是项目配置。用真实仓库 remote 和可用的已授权工具核对 owner/repo 或项目。
 fork 同时存在 origin/upstream 时不能把公开上游误当写入目标；也不能把安装本 skill 的仓库当业务项目。
-缺少配置且上下文不能确定目标时，只确认缺失的目标信息，不强制跑 setup 流程。
+缺少 `docs/agents/issue-tracker.md` 或等价明确配置时，不猜发布目标；提示先运行 `/setup`。只预览 spec 时可以继续生成草稿而不远程写入。
 可以先准备草稿；明确发布目标和授权前不远程写入，不静默改用另一平台。
 
 GitHub、GitLab、Linear 或其他 tracker 继续遵循已有项目配置，使用该环境确实可用的 connector 或已认证 CLI。
@@ -46,4 +46,4 @@ GitHub、GitLab、Linear 或其他 tracker 继续遵循已有项目配置，使�
 ```
 
 选择本地 Markdown 时记录业务项目自己的路径。现有 labels、domain glossary、ADR 位置保持不变。
-不要因为 setup 命令已删除就重建或删除这些配置。
+`/setup` 只补齐或校验缺失配置，不重建或删除已有人工约定。
