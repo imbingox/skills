@@ -28,7 +28,7 @@ disable-model-invocation: true
 区分已确认决策、可验证的现状和未决事项。检查现有 API、CLI、UI、config/env、schema、错误与状态语义、消息协议和持久化格式的调用方。
 测试优先使用已约定、已有且稳定的高层 public seam。不要重复确认已经同意的验收方式。
 
-tracker 的读取、配置兼容与发布规则见 [issue-tracker.md](references/issue-tracker.md)。发布前必须读取。
+tracker 的读取、配置兼容与发布规则见 [issue-tracker.md](references/issue-tracker.md)。发布前必须读取。若当前 repo 缺少 `docs/agents/issue-tracker.md` 或等价明确配置，停止远程发布并提示先运行 `/setup`；不要猜发布目标。
 有重大未决决策时明确标为待确认，不把猜测写成已定事实，也不标 ready-for-agent。
 
 ### 2. 先写 Proposed Changes
