@@ -1,7 +1,7 @@
 {
   "name": "bingo-skills",
-  "version": "1.2.3",
-  "description": "Chinese-first engineering workflows and agent-document writing guidance.",
+  "version": "1.2.4",
+  "description": "Chinese-first engineering workflows with scope and complexity discipline, plus agent-document writing guidance.",
   "author": {
     "name": "bingo"
   },

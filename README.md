@@ -3,6 +3,15 @@
 独立维护的中文工程工作流技能集。部分方法与实现源自 [mattpocock/skills](https://github.com/mattpocock/skills)，保留原 MIT 许可、版权和来源；不以兼容或同步其完整技能集为目标。
 中文优先，面向日常 agent 开发：先确认怎么用、兼容什么，再让 agent 实现。
 
+吸收 Ponytail 的核心准则，按本项目的契约、兼容与验证纪律调整：
+
+- 先理解问题和真实调用链，再判断是否需要新增代码。
+- 优先复用已有代码、标准库、平台原生能力和已安装依赖。
+- 只为当前需求增加复杂性，不为假想未来预留抽象、配置或框架。
+- 修复根因，覆盖受影响路径，不只掩盖报告中的症状。
+- 选择清晰、易维护的最小充分实现，不以最少行数为目标。
+- 满足验收并完成必要验证后停止扩展，不削减明确需求、兼容或安全保障。
+
 六个 skill 直接位于 `skills/<name>/`。本页说明安装与使用，执行细节和模板随各 skill 打包。
 
 ## 使用方式
@@ -29,6 +38,8 @@ grill → to-spec → implement
 | [writing-for-agents](skills/writing-for-agents/SKILL.md) | 编写或审查 agent 指令文档：skill、AGENTS.md、spec、tickets 和任务 prompt；允许自动触发。 |
 
 五个工作流入口均为 user-invoked；另有一个可自动或手动调用的 writing-for-agents。domain modeling、codebase-design、测试和 code review 的必要纪律已收进日常入口，不需要单独安装或调用。模块设计原则由 grill 和 implement 按需读取各自随包参考。
+
+防止过度设计的约束同样内置：`grill` 检查是否已有更简单的达成方式，`to-spec` 固定当前范围，`implement` 与 review 检查新增复杂性的依据，`diagnosing-bugs` 控制根因修复范围。无需额外安装 ponytail；精简以满足已确认需求为前提，不按代码行数评价，也不削减兼容、安全或必要测试。
 
 发现 bug 可直接调用 `/diagnosing-bugs <症状 / 日志 / 失败测试>`，不需要先写 spec、建 issue 或运行 setup。仅调查时说“只排查”；该入口不自动更新 tracker，也不套用 implement 的 DAG 编排流程。
 
