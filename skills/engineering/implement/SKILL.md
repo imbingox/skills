@@ -17,7 +17,7 @@ disable-model-invocation: true
 
 ## 1. 读取目标并自动选择模式
 
-先读取项目的 `AGENTS.md` / `CLAUDE.md`、相关 glossary / ADR、目标 issue / spec 全文及评论，以及项目现有 `docs/agents/issue-tracker.md` 或等价 tracker 配置。
+先读取项目的 `AGENTS.md` / `CLAUDE.md`、相关 glossary / ADR、目标 issue / spec 全文及评论，以及项目现有 `docs/agents/issue-tracker.md` 或等价 tracker 配置。若目标依赖远程 issue workflow 但当前 repo 没有明确 tracker 配置，停止状态写入并提示先运行 `/setup`；不要自行猜 repo 或状态机。
 
 读取 `Proposed Changes`、完整验收条件、父子关系和真实 blockers。旧 spec 没有 `Proposed Changes` 也正常支持。
 
