@@ -13,9 +13,9 @@ grill-with-docs → to-spec → implement
 | --- | --- |
 | [grill-with-docs](skills/engineering/grill-with-docs/SKILL.md) | 澄清需求、外部接口和兼容约束，必要时记录 glossary / ADR。 |
 | [to-spec](skills/engineering/to-spec/SKILL.md) | 顶部 Proposed Changes，下面完整 spec；小任务一张 issue，大任务父 spec + 子 tickets。 |
-| [implement](skills/engineering/implement/SKILL.md) | 按 spec / ticket 实施，内置行为测试和 Standards / Spec 双轴自审。 |
+| [implement](skills/engineering/implement/SKILL.md) | Leaf 自动实现 + 独立 review；Parent 自动编排 child issue DAG、独立 review 每个子票并做最终 integration review。 |
 
-只导出这三个 skill。追问、domain modeling、测试和 code review 的必要规则已收进对应入口，不需要单独安装依赖。
+只导出这三个 skill。追问、domain modeling、测试和 code review 的必要规则已收进对应入口，不需要单独安装依赖。`implement` 中由 Controller 独占 issue workflow state，Implementer / Reviewer 只报告事实；所有实现都必须经过独立 reviewer 才能标 done。
 
 ## Spec 与 tickets 合并的是操作，不是职责
 
