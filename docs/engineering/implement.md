@@ -6,7 +6,7 @@
 
 Leaf 下主 session 实现，独立 reviewer sub-agent 验收；Parent 下主 session 作为 Controller / Orchestrator，按 blockers 计算 frontier，编排 child implementers 与独立 child reviewers，最后再做独立 parent integration review。
 
-核心规则是：**Controller 管 issue workflow state，Implementer 写代码，Reviewer 独立验收。** 只有 review 与 required verification 都通过，Controller 才能把对应 issue 标 done / close。
+核心规则是：**Controller 管 issue workflow state，Implementer 写代码，Reviewer 独立验收。** 具体状态名称和终态动作来自项目的 issue tracker 配置；只有 review 与 required verification 都通过，Controller 才能执行该 tracker 定义的完成转换。
 
 ## When to reach for it
 
@@ -16,15 +16,15 @@ Leaf 下主 session 实现，独立 reviewer sub-agent 验收；Parent 下主 se
 
 ## Common questions
 
-**谁关 issue？** 只有当前 Controller。Implementer 和 Reviewer 只报告事实，不改 authoritative workflow state。
+**谁改 issue 状态？** 只有当前 Controller。Implementer 和 Reviewer 只报告事实，不改 authoritative workflow state；状态名、labels、project field 或 close 动作都按项目 tracker 配置执行。
 
 **Leaf 也要独立 review 吗？** 要。主 session 可以同时是 Controller + Implementer，但 Reviewer 必须是没有参与实现的独立 sub-agent。
 
-**Parent 什么时候解锁下游？** child 必须 implementation 完成、独立 review 通过且 verification 通过，Controller 标 done 后才解锁 blocker。
+**Parent 什么时候解锁下游？** child 必须 implementation 完成、独立 review 通过且 verification 通过，并达到 tracker 定义的完成条件后才解锁 blocker。
 
 **所有 ready child 都并行吗？** 不会。DAG 决定能否开始，代码修改范围和 workspace 隔离决定是否安全并行。
 
-**没有 sub-agent 能力怎么办？** 可以实现和测试，但没有独立 review 就不能自动标 done。
+**没有 sub-agent 能力怎么办？** 可以实现和测试，但没有独立 review 就不能自动推进到 tracker 定义的完成状态。
 
 ## It's working if
 
