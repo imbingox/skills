@@ -1,7 +1,7 @@
 {
   "name": "bingo-skills",
   "version": "1.2.3",
-  "description": "Chinese-first engineering workflow: grill, spec with optional tickets, implement with tests and review.",
+  "description": "Chinese-first engineering workflow: setup, grill, spec with optional tickets, and orchestrated implementation.",
   "author": {
     "name": "bingo"
   },
@@ -12,9 +12,11 @@
     "engineering",
     "skills",
     "spec",
-    "compatibility"
+    "compatibility",
+    "orchestration"
   ],
   "skills": [
+    "./skills/engineering/setup",
     "./skills/engineering/grill-with-docs",
     "./skills/engineering/to-spec",
     "./skills/engineering/implement"
