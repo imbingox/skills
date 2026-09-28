@@ -12,7 +12,7 @@ Leaf 下主 session 实现，独立 reviewer sub-agent 验收；Parent 下主 se
 
 需求和 external contract 已通过 spec / issue 确认，准备开始实际开发时。
 
-对单一 issue 直接运行；对父 issue 也直接运行，不需要另写 orchestration prompt。父票已有 child graph 时，`implement` 会消费已有 DAG，而不是重新拆票。
+对单一 issue 直接运行；对父 issue 也直接运行，不需要另写 orchestration prompt。父票已有 child graph 时，`implement` 会消费已有 DAG，而不是重新拆票。依赖远程 issue workflow 但 repo 尚未配置 tracker 时先运行 `/setup`。
 
 ## Common questions
 
