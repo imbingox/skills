@@ -9,7 +9,7 @@ import sys
 from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED = {'grill-with-docs', 'to-spec', 'implement'}
+EXPECTED = {'setup', 'grill-with-docs', 'to-spec', 'implement'}
 errors: list[str] = []
 
 
@@ -27,8 +27,8 @@ def read(path: Path) -> str:
 
 
 skills = sorted((ROOT / 'skills').rglob('SKILL.md'))
-require({p.parent.name for p in skills} == EXPECTED and len(skills) == 3,
-        'Exactly the three curated skill entries must be discoverable')
+require({p.parent.name for p in skills} == EXPECTED and len(skills) == 4,
+        'Exactly the four curated skill entries must be discoverable')
 
 for path in skills:
     text = read(path)
@@ -82,5 +82,5 @@ for name in EXPECTED:
 if errors:
     print('\n'.join(f'ERROR: {error}' for error in errors), file=sys.stderr)
     raise SystemExit(1)
-print('PASS: 3 skill entries, explicit invocation, standalone references, manifests and docs')
+print('PASS: 4 skill entries, explicit invocation, standalone references, manifests and docs')
 print('Static checks only; agent behavior and live installation are not exercised.')
