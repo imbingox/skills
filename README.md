@@ -52,7 +52,7 @@ claude plugin install bingo-skills@imbingox
 | [setup](skills/setup/SKILL.md) | 为当前项目配置工作流和领域文档。 |
 | [grill](skills/grill/SKILL.md) | 澄清需求、外部行为、兼容范围和验收边界。 |
 | [to-spec](skills/to-spec/SKILL.md) | 固化需求为 spec，并按规模决定是否拆成子 tickets。可说“仅 spec”“只拆票 #123”或“只预览”。 |
-| [implement](skills/implement/SKILL.md) | 按 issue 或 spec 实施并完成独立 review；有子票时自动编排。 |
+| [implement](skills/implement/SKILL.md) | 按 issue 或 spec 实施并完成独立 review；有子票时通过当前 harness 的 sub-agent 自动编排。 |
 | [diagnosing-bugs](skills/diagnosing-bugs/SKILL.md) | 从症状开始复现、定位和修复；可说“只排查”以仅输出根因与证据。 |
 | [writing-for-agents](skills/writing-for-agents/SKILL.md) | 编写或审查 skill、项目指令、spec、tickets 和 agent prompt；可自动触发，也可手动调用。 |
 

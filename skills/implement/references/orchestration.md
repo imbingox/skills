@@ -7,34 +7,24 @@ Parent mode 下主 session 只做 Controller：建图、派发、集成、推进
 - 开始时记录当前分支、起点 commit 和主工作区已有的未提交修改。这些修改只留在主工作区，不进入任何 worktree 或 commit。
 - 从当前分支 HEAD 创建本地**集成分支** `implement/<parent>`，并在专门的**集成 worktree** 中检出：`git worktree add -b implement/<parent> <集成 worktree 路径> HEAD`。所有合入和集成检查都在这里进行，不在主工作区执行 checkout 或 merge。
 - `implement/<parent>` 已存在时视为续跑：核对其中已合入的 child 与 tracker 状态是否一致，不重建分支；不一致时先向用户说明。
-- 每个 child 在从集成分支当前 HEAD 创建的独立 worktree / branch 中实现，创建方式见“执行后端”。
+- 每个 child 在从集成分支当前 HEAD 创建的独立 worktree / branch 中实现，创建方式见“Sub-agent 与 worktree”。
 - child 验收后，Controller 在集成 worktree 中用 `git merge --no-ff <child-branch>` 合入并运行相关检查，然后才解锁下游。保留已审查的 commits，不 squash、不 rebase，否则后续无法确认合入内容就是审查内容，清理时分支也无法被识别为已合并。
 - 下游从合入后的集成分支创建 worktree，因此自带全部已验收依赖；未验收 child 的成果不合入。
 - 合入冲突由 Controller 解决并重跑检查；解决方式改变了已验收行为时，先经独立 review 再继续。
 - 本地集成不代表授权 push 或 merge PR。
 
-## 执行后端
+## Sub-agent 与 worktree
 
-开始时选定一次，整轮不切换。两种后端共用本文件的集成、review、清理和 tracker 规则。
+只使用当前 harness 的 sub-agent 能力。无法启动 sub-agent 时，暂停编排并说明，不由 Controller 接管整张父票的实现。
 
-**Orca**：`orca status --json` 显示 runtime ready，且 `orca worktree current --json` 能识别当前目录时使用。先运行 `orca skills get orchestration` 读取与已安装 CLI 匹配的指南，具体命令和参数以它为准。对应关系：
-
-- 一次 Parent 编排对应一个 Run（`orchestration run-create`）。
-- 派 Implementer：`orchestration worker-start --spec "<brief>" --worktree new-top-level --base-branch implement/<parent> --name <child-slug> --agent <claude|codex>`，不传 `--setup skip`。记录 receipt 中的 Dispatch ID、worktree id / 路径和分支。
-- 派 Reviewer：`worker-start --spec "<review brief>" --worktree id:<child worktree id> --agent <...>`；已有 worktree 不会重跑 setup。
-- 等待与交互：`orchestration check --wait`；Implementer 的阻塞问题走 ask / reply；必须改 external contract 时用 decision gate 等用户确认。
-- 每个 `worker_done` 被接受后立即按指南处置该 worker：Controller 核对其 commits 和报告后执行 `worker-release`。修复不复用旧终端，而是在同一 child worktree 上派新的 Implementer（`--worktree id:<child worktree id>`），附原 brief、当前 diff 和 findings。
-- 只给当前 frontier 中的 child 即时创建 Task，不用 `--deps` 在 Orca 里建依赖：`worker_done` 只是 Implementer 自报完成，不代表已验收、已合入。frontier 和 tracker 状态仍由 Controller 按本文件计算和推进。
-
-**Harness**：否则使用当前 harness 的 sub-agent 能力。worktree 始终由 Controller 创建：`git worktree add -b <child-branch> <path> implement/<parent>`，再把路径和分支写进 brief，要求 sub-agent 只在该路径内工作：shell 的 cwd 可能在每次调用后重置，命令一律用绝对路径或 `git -C <path>`。不使用 harness 自动创建的隔离 worktree，因为它的基线和分支名无法事先确定。
+worktree 由 Controller 创建：`git worktree add -b <child-branch> <path> implement/<parent>`，再把路径和分支写进 brief，要求 sub-agent 只在该路径内工作：shell 的 cwd 可能在每次调用后重置，命令一律用绝对路径或 `git -C <path>`。不使用 harness 自动创建的隔离 worktree，因为它的基线和分支名无法事先确定。
 
 ## 新 worktree 的环境
 
-Implementer 开始工作前，worktree 必须已初始化。初始化失败时把该 child 标记为阻塞，报告脱敏后的输出，不让 Implementer 在残缺环境里修依赖或绕过测试。
+Controller 在创建 worktree 后、派发 Implementer 前完成初始化。初始化失败时把该 child 标记为阻塞，报告脱敏后的输出，不让 Implementer 在残缺环境里修依赖或绕过测试。
 
-- **Orca**：新 worktree 默认执行 Orca 仓库设置中的 setup 命令（`orca repo show --repo <selector> --json` 的 `hookSettings.scripts.setup`），此时不再额外执行 `setup_env.sh`。仓库策略为 `start-immediately` 时 setup 与 agent 同时启动：在 brief 中注明 setup 可能仍在运行，测试因依赖缺失失败时等 setup 结束后重跑。
-- **Orca setup 命令为空**，或使用 **Harness** 后端时：worktree 根目录有 `setup_env.sh` 就执行 `bash setup_env.sh`；脚本未纳入 Git、只在主工作区存在时，在 worktree 目录下执行主工作区那份。Harness 下由 Controller 在创建 worktree 后执行，成功后再派发；Orca 下 agent 会立即启动，所以把“先执行该脚本，失败即停止并报告”写成 brief 的第一步。
-- 两者都没有时不自行猜测初始化命令；按项目说明准备环境，缺失时在 brief 和报告中注明。
+- worktree 根目录有 `setup_env.sh` 就执行 `bash setup_env.sh`；脚本未纳入 Git、只在主工作区存在时，在 worktree 目录下执行主工作区那份。成功后再派发。
+- 没有脚本时不自行猜测初始化命令；按项目说明准备环境，缺失时在 brief 和报告中注明。
 
 ## 建图与 frontier
 
@@ -57,25 +47,26 @@ Implementer 开始工作前，worktree 必须已初始化。初始化失败时�
 ## 每个 child 的生命周期
 
 1. 配置有对应状态时，标记 child in-progress。
-2. 按执行后端创建 worktree 并完成初始化，派 **Implementer sub-agent**。它看不到 Controller 的上下文，brief 中给出：
+2. Controller 创建 worktree 并完成初始化，派 **Implementer sub-agent**。它看不到 Controller 的上下文，brief 中给出：
    - child issue 全文，以及 parent spec 中相关约束；
    - worktree 路径、branch、基线 commit，以及 blockers 已完成的事实；
-   - 环境初始化要求（见上文）；
+   - 环境初始化结果和项目环境说明（见上文）；
    - 实现纪律：入口 SKILL.md 第 4 节、[tdd.md](tdd.md)，涉及设计时加 [codebase-design.md](codebase-design.md)，给路径或直接附内容；
    - 要求：在自己的 branch 提交；不修改 tracker；返回 commits、运行过的验证命令与结果、未解决项。
 3. 核对 child branch 的 commits 确实基于基线 commit；配置有对应状态时标记 in-review。按 [review.md](review.md) 派一个**未参与该 child 实现的独立 Reviewer**，review 范围是基线 commit 到 child branch HEAD。
-4. review fail：findings 交回 Implementer 修复，再独立复审。原 Implementer 无法继续（包括 Orca 下已 release）时，派新的 Implementer，附原 brief、当前 diff 和 findings。未通过的 child 不解锁下游。
+4. review fail：findings 交回 Implementer 修复，再独立复审。原 Implementer 无法继续时，在同一 child worktree 上派新的 Implementer，附原 brief、当前 diff 和 findings。未通过的 child 不解锁下游。
 5. review pass：运行 child 要求的完整 verification，在集成 worktree 中合入，确认合入内容就是已审查的内容，再按配置推进完成状态。commit hook 或冲突解决改变了内容时，补做受影响的 review 与验证。
 6. 按下文清理该 child 的 worktree，然后重新计算 frontier。
 
 ## 清理
 
-child 合入集成分支且合入后的检查通过后，Controller 立即清理：
+child 合入集成分支且合入后的检查通过后，Controller 确认该 child 的 sub-agent 都已结束工作，再立即清理：
 
-- **Orca**：确认该 child 的 worker 都已 release，再 `orca worktree rm --worktree id:<worktree-id>`。不加 `--force`；Orca 只删除能证明已合并的本地分支。
-- **Harness**：`git worktree remove <path>`，再在集成 worktree 中执行 `git branch -d <child-branch>`。在主工作区执行会按当前分支判断是否已合并，因而失败。
+1. 执行 `git worktree remove <path>`；它会同时移除 Git 登记和实际目录。
+2. 命令成功后核对 `<path>` 已不存在，不能只检查 `git worktree list`。若仍有残留目录，先查看内容并确认它是本轮创建的 worktree 路径、已不再被 Git 登记；空目录用 `rmdir -- <path>`，仅含已确认可删除的本轮生成物时用 `rm -r -- <path>`，删除后再次确认路径不存在。有未确认文件时保留并报告。
+3. 在集成 worktree 中执行 `git branch -d <child-branch>`。在主工作区执行会按当前分支判断是否已合并，因而失败。
 
-删除失败（有未提交内容、分支未被识别为已合并）时不强制删除，保留并在最终报告中列出。review 未通过、child 被阻塞或编排中途暂停时，保留 worktree 和分支并报告路径，方便检查。
+删除失败（有未提交内容、分支未被识别为已合并）时不强制删除，也不以 `rm` 绕过失败，保留并在最终报告中列出。review 未通过、child 被阻塞或编排中途暂停时，保留 worktree 和分支并报告路径，方便检查。
 
 ## Parent integration review
 
@@ -101,6 +92,6 @@ integration review 通过后，在集成 worktree 中运行 parent-level tests /
 - **正常模式**：在主工作区执行 `git merge --ff-only implement/<parent>`，把当前分支快进到集成结果。当前分支已前进、或与主工作区的未提交修改冲突时，git 会拒绝：不要强制、不要 stash 用户修改，保留集成分支并报告。
 - **“不提交”模式**：开始时告知用户结果只留在本地分支 `implement/<parent>`，当前分支不动。
 
-交付成功后删除集成 worktree（`git worktree remove`），正常模式下再 `git branch -d implement/<parent>`；“不提交”模式保留该分支。最后按配置推进 parent 到终态，并核对本次创建的 worktree 都已清理，或已列入报告。
+交付成功后删除集成 worktree（`git worktree remove`），按上文清理规则核对实际目录已删除；正常模式下再 `git branch -d implement/<parent>`，“不提交”模式保留该分支。最后按配置推进 parent 到终态，并核对本次创建的 worktree 都已清理，或已列入报告。
 
 快进失败或处于“不提交”模式时，已按配置完成的 child 在 tracker 上显示完成，代码却只在 `implement/<parent>` 上：最终报告必须明确写出这一点和该分支名。

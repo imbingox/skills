@@ -13,7 +13,7 @@
 - 每个 skill 单独安装也必须能用；相对资源链接不能越过该 skill 的目录去依赖兄弟目录或仓库根文件。
 - 项目 tracker 配置归业务项目所有，旧 docs/agents 文件继续读取，不强制 schema 迁移。
 - tracker 的 provider 模板和操作命令只放在 setup；to-spec / implement 只按项目配置执行，不各自携带模板。
-- implement 的 Parent 自动编排是实际使用需求，精简时保留。
+- implement 的 Parent 自动编排是实际使用需求，精简时保留；只用当前 harness 的 sub-agent，确有需求再接入其他编排后端。
 - 五个工作流入口保留 disable-model-invocation: true 和 allow_implicit_invocation: false；writing-for-agents 不设置前者，allow_implicit_invocation 为 true。原有入口不能硬依赖该可选参考。
 - 更新已有 tracker 对象前重读，保留人工编辑；不要假报发布、测试或验收成功。
 - 变更后运行 python3 scripts/check-skills.py；具备 Claude CLI 时另跑 claude plugin validate . --strict。
