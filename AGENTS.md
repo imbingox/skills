@@ -6,7 +6,10 @@
 根 README.md 和 .claude-plugin/plugin.json 必须与这六个 skill 一致；使用说明集中在 README，执行细节放在各 skill 内，不另维护 docs 目录或 changelog。
 
 - 默认中文说明，英文目录、name 和技术标识符保持稳定。
-- setup 是 run once per repo 的 bootstrap：项目 tracker/domain 必配，用户级 CLI statusline 只做幂等检查与缺失补齐。
+- setup 是 run once per repo 的 bootstrap：项目 tracker/domain 必配，CLI statusline 在项目级幂等检查与缺失补齐，不写用户目录。
+- 新项目默认使用 open / ready / closed 的个人工作流；远程 tracker 只需一个 ready 标签，已有状态和标签映射继续沿用，不强制迁移。
+- 开发与验证约定随代码演进：setup 初始化指引，实施时核对实际脚本并随技术栈 / 命令变化维护原说明及受影响的已有 CI，不另建命令注册表。
+- 中断续跑复用原 issue / 本地票的简短记录；不另建进度体系，不把历史记录当作当前验证结果，也不扩大 tracker 写入权限。
 - to-spec 内置按需拆票；Proposed Changes 优先外部用法与兼容性。
 - diagnosing-bugs 是独立诊断入口，沿用六阶段闭环；codebase-design 按需内置到设计与实施流程，不导出独立入口。
 - 必要纪律内置到入口或该入口的 references 内，不自动恢复已移除的 skill。

@@ -1,12 +1,13 @@
 ---
 name: implement
-description: "按已确认的 issue / spec 实施。Leaf 自动实现并交给独立 reviewer；Parent 自动编排子 issue DAG、独立 review 每个子票并做最终 integration review。Controller 独占 workflow state。"
+description: "按已确认的 issue / spec 或明确的小任务实施。Leaf 自动实现并交给独立 reviewer；Parent 自动编排子 issue DAG、独立 review 每个子票并做最终 integration review。支持中断续跑，Controller 独占 workflow state。"
 disable-model-invocation: true
 ---
 
 # Implement
 
-实现用户指定的 issue / spec，不把实施阶段变成重新设计需求的机会。默认用中文报告，保留项目已有技术标识符。
+实现用户指定的 issue / spec，或直接接受目标、兼容边界和验收已明确的小任务；不把实施阶段变成重新设计需求的机会。默认用中文报告，保留项目已有技术标识符。
+小任务可直接进入 Leaf mode，不强制先运行 grill / to-spec / setup 或创建 issue；在当前对话简要记录已确认的目标与验收，缺少关键决策时先问，不自行补产品行为。简短路径不减免独立 review、验证或原有授权边界。
 
 > **Controller 管状态，Implementer 写代码，Reviewer 独立验收。** 每份实现都由没有参与该实现的独立 reviewer agent 审查；只有 Controller 可以改变 issue workflow state。
 
@@ -14,7 +15,7 @@ disable-model-invocation: true
 
 读取项目 `AGENTS.md` / `CLAUDE.md`、相关 glossary / ADR、目标 issue / spec 全文及评论，以及项目 tracker 配置（项目说明指向的文件，其次 `docs/agents/issue-tracker.md`）。读取 issue、列子票、读 blocker、推进状态和关闭都按该配置中的操作执行；配置只有自然语言描述、缺少具体命令时（例如旧版 setup 生成的配置），按其描述用对应 provider 的标准工具执行，并建议重跑 `/setup` 补齐；不因此阻塞。目标在远程 tracker 上但找不到配置时，不写任何状态，提示先运行 `/setup`；不要自行猜 repo 或状态机。
 
-读取 `Proposed Changes`（旧 spec 没有也正常）、完整验收条件、父子关系和真实 blockers，然后自动选择：
+读取 `Proposed Changes`（旧 spec 没有也正常）、完整验收条件、父子关系和真实 blockers；直接文本任务只读取存在的材料，不补造 spec / tracker。续跑时先按第 6 节核对交接与实际状态，然后自动选择：
 
 - **Leaf mode**：目标没有需要编排的 child issues，直接实现当前目标。
 - **Parent mode**：目标有 child issues，读取 [orchestration.md](references/orchestration.md)，当前 session 作为 Controller，用当前 harness 的 sub-agent 完成整组编排，无需用户额外开启。
@@ -36,7 +37,7 @@ disable-model-invocation: true
 
 主 session 同时是 Controller 和 Implementer；**Reviewer 必须是独立 sub-agent**。
 
-1. 确认 blockers 已满足；记录起点 commit、当前分支和已有的未提交修改。
+1. 按项目配置核对实施就绪、确认 blockers 已满足；未配置就绪标记时直接核对需求与验收，不自行要求标签。需求尚未明确时暂停，不因用户给了编号就猜测实现。记录起点 commit、当前分支和已有的未提交修改。
 2. 配置有对应状态时，标记 in-progress。
 3. 按第 4 节实现，持续运行相关测试 / typecheck。
 4. 配置有对应状态时标记 in-review；读取 [review.md](references/review.md)，启动未参与实现的独立 Reviewer。
@@ -59,11 +60,14 @@ disable-model-invocation: true
 - 以完整满足契约为前提减少维护负担，不追求最少行数；不牺牲可读性、信任边界校验、安全、可访问性、防数据丢失处理和必要验证。
 - 验收满足且 review / verification 通过后停止扩展，不顺手重构相邻模块。
 
-测试：
+测试与开发指引：
 
+- 实施前核对本次涉及的开发说明、manifest、lockfile、任务脚本和 CI，确认命令、工作目录与环境前置条件；不每次扫描全项目。说明与实际入口冲突时先查明原因，不能用过时命令、编造脚本或跳过失败检查制造通过。
 - 写测试前读取 [tdd.md](references/tdd.md)，能 TDD 时按垂直切片：`一条行为测试 → 因目标行为缺失而失败 → 最小实现使其通过 → 下一条`。修 bug 先写能复现问题的 regression test。
 - 覆盖关键成功、失败、兼容 / migration 和异步状态路径，不要求穷举边界。纯文档、配置或无法合理 TDD 的工作用静态检查 / smoke test，并说明验证限制。
-- 持续运行小范围测试与 typecheck，完成前运行项目要求的完整检查。没实际运行的检查不能记为通过。
+- 按改动范围选检查：单模块跑相关测试 / typecheck，跨模块或接口改动覆盖两侧与契约，构建 / 依赖改动检查构建；完成前仍运行项目明确要求的全量 gate。没有测试或环境不支持时报告缺口，没实际运行的检查不能记为通过。
+- 新增技术栈、改变启动 / 测试 / 构建方式时，本次交付包含必要的验证入口、原开发说明及受影响的已有 CI 同步。命令事实留在项目脚本中，指引只补来源、选择规则与前置条件，不另建注册表；保留仍在使用的旧技术栈检查，无需重跑 setup。
+- 完成前核对新增 / 修改的入口确实可用，说明已运行的验证和剩余限制；不为完善指引另起测试框架或 CI 改造项目，也不借更新说明降低原有验收要求。
 
 涉及模块 / interface 设计、依赖组织、测试 seam 或重构时，读取并应用 [codebase-design.md](references/codebase-design.md)，不改变已确认 spec。
 
@@ -80,9 +84,22 @@ disable-model-invocation: true
 
 `/implement` 授权本次目标范围内的本地 commit 和必要的 issue workflow transitions，但**不自动授权** push、merge PR、production deploy / migration、修改目标图之外的 issue，或改写已确认 spec。
 
-最终报告：
+### 暂停与恢复
 
-- 完成 / 未完成的 issues；
+主动暂停、受阻或准备换 session 时，由 Controller 留一份简短交接，而不是持续追加执行流水账：
+
+- 已完成与剩余工作，保留未决决策和 blocker。
+- repo、分支 / worktree、原始起点与当前 commit；本轮及用户原有未提交改动分别说明。
+- 最近验证的命令、工作目录、结果与对应 commit / 未提交工作区范围；review 是否通过、覆盖到哪里。
+- 尚在运行的 sub-agent / 外部任务，以及下一步动作或需要用户决定的事项。
+
+有已授权的目标时，按项目配置追加原 issue 评论或已有本地票；写前重读、写后核对，保留人工内容。Implementer / Reviewer 只向 Controller 返回事实，不自行写 tracker。没有票、缺配置、用户要求“不改 tracker”或写入失败时，只在当前对话交接并说明未持久化，不自动建票或另建进度文件；记录前脱敏，不为交接强行提交或清理未完成 worktree。无法在进程被强制终止前保证留下记录。
+
+恢复时重读目标、最新评论、项目配置和交接，核对分支、worktree、当前 diff 及运行中的任务，避免重复派发。旧记录只是线索；代码、依赖或环境改变时重跑受影响验证，review 必须覆盖实际交付内容。保留原始起点，不把当前 HEAD 当成新起点；基线或状态无法核实时先说明并确认，不根据旧的“完成”直接推进状态。
+
+### 最终报告
+
+- 完成 / 未完成的目标或 issues；
 - 每份 review 与 parent integration review 的结果；
 - external contract / compatibility 的实际变化；
 - verification 证据；
