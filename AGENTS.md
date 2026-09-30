@@ -16,7 +16,7 @@
 - 允许 skill 之间声明依赖并复用资源，不要求每个 skill 单独安装即可运行；依赖须在入口和 README 中说明，按实际安装方式定位资源，缺失时明确提示，不假定仓库根文件会随 skill 安装。
 - 项目 tracker 配置归业务项目所有，旧 docs/agents 文件继续读取，不强制 schema 迁移。
 - tracker 的 provider 模板和操作命令只放在 setup；to-spec / implement 只按项目配置执行，不各自携带模板。
-- implement 的 Parent 自动编排是实际使用需求，精简时保留；只用当前 harness 的 sub-agent，确有需求再接入其他编排后端。
+- implement 的 Parent 自动编排是实际使用需求，精简时保留；在调用时的当前分支和工作区集成，只为子任务创建独立 worktree，不另建父级分支或 worktree。只用当前 harness 的 sub-agent，确有需求再接入其他编排后端。
 - fast-implement 用于目标明确、影响局部的小任务，无需 issue / spec / setup，由当前 agent 自查并验证，不管理 issue 生命周期；依赖 implement 的实现与验证参考，不自动调用其他手动入口，不减免项目要求的独立 review 或完成条件。
 - 六个工作流入口保留 disable-model-invocation: true 和 allow_implicit_invocation: false；writing-for-agents 不设置前者，allow_implicit_invocation 为 true。工作流入口不能硬依赖该可选参考。
 - 更新已有 tracker 对象前重读，保留人工编辑；不要假报发布、测试或验收成功。

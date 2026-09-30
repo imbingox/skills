@@ -13,7 +13,7 @@ Leaf、每个 child 和 parent integration 都由未参与相应实现 / 集成�
 Reviewer 看不到 Controller 的上下文，所需材料都写进 brief：
 
 - 本参考的路径或内容，以及 workspace 与分支。
-- 固定的 diff 范围。Leaf 在提交前 review：`git diff <起点 commit>`（含已暂存与未暂存改动）加本次新增的未跟踪文件；开始前已有的用户修改不算本次成果。Parent child 已在自己的 branch 提交：`git diff <baseline>...HEAD` 和 `git log --oneline <baseline>..HEAD`；Parent integration 的基线是编排起点 commit。
+- 固定的 diff 范围。Leaf 在提交前 review：`git diff <起点 commit>`（含已暂存与未暂存改动）加本次新增的未跟踪文件；开始前已有的用户修改不算本次成果。Parent child 已在自己的 branch 提交：`git diff <baseline>...<child-commit>` 和 `git log --oneline <baseline>..<child-commit>`；Parent integration 用 `git diff <编排起点> <固定的目标分支-commit>`，在主工作区审查该版本，不能把未提交修改当作交付内容。
 - 目标 spec / issue 全文、验收条件、Proposed Changes 和相关 parent 约束。
 - 项目编码约定来源（如 AGENTS.md、CONTRIBUTING.md）、相关 glossary / ADR、已运行的检查及结果。
 - 涉及模块设计时附上 [codebase-design.md](codebase-design.md)。
@@ -52,4 +52,4 @@ Verification gaps: 未运行或无法验证的检查
 
 ## Parent integration
 
-输入包含 parent 验收要求、各 child 的交付记录和集成分支上的实际内容。按 [orchestration.md](orchestration.md) 的检查清单审查组合后的接口衔接、生命周期、错误与迁移语义及整体范围，不逐票重审；仍分别报告 Standards 和 Spec。
+输入包含 parent 验收要求、各 child 的交付记录和目标分支上的实际内容。按 [orchestration.md](orchestration.md) 的检查清单审查组合后的接口衔接、生命周期、错误与迁移语义及整体范围，不逐票重审；仍分别报告 Standards 和 Spec。

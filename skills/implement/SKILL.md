@@ -18,7 +18,7 @@ disable-model-invocation: true
 读取 `Proposed Changes`（旧 spec 没有也正常）、完整验收条件、父子关系和真实 blockers；直接文本任务只读取存在的材料，不补造 spec / tracker。续跑时先按第 6 节核对交接与实际状态，然后自动选择：
 
 - **Leaf mode**：目标没有需要编排的 child issues，直接实现当前目标。
-- **Parent mode**：目标有 child issues，读取 [orchestration.md](references/orchestration.md)，当前 session 作为 Controller，用当前 harness 的 sub-agent 完成整组编排，无需用户额外开启。
+- **Parent mode**：目标有 child issues，读取 [orchestration.md](references/orchestration.md)，当前 session 作为 Controller，在调用时的当前分支和工作区集成，只给子任务创建独立 worktree，用当前 harness 的 sub-agent 完成整组编排，无需用户额外开启。
 
 已有 issue graph 是已确认的执行计划：默认**不重新拆票、不重排需求、不自行新增产品决策**。
 发现 blocker 错误、子票无法独立完成、spec 与代码事实冲突，或必须改变 external contract 时，暂停受影响分支并向用户说明。
@@ -77,5 +77,5 @@ disable-model-invocation: true
 - 每份 review 与 parent integration review 的结果；
 - external contract / compatibility 的实际变化；
 - verification 证据；
-- commits 与集成分支；
+- commits 与实际交付分支；
 - 任何未解决或未验证事项。
