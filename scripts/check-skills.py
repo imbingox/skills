@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the curated skill surface and bundled references without network access."""
+"""Check the curated skill surface and repository references without network access."""
 from __future__ import annotations
 
 import json
@@ -9,7 +9,7 @@ import sys
 from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-MANUAL = {'setup', 'grill', 'to-spec', 'implement', 'diagnosing-bugs'}
+MANUAL = {'setup', 'grill', 'to-spec', 'implement', 'fast-implement', 'diagnosing-bugs'}
 AUTOMATIC = {'writing-for-agents'}
 EXPECTED = MANUAL | AUTOMATIC
 errors: list[str] = []
@@ -59,9 +59,9 @@ for path in skills:
             if urlparse(target).scheme or target.startswith('#'):
                 continue
             resolved = (doc.parent / unquote(target.split('#')[0])).resolve()
-            require(resolved.is_relative_to(path.parent.resolve()),
-                    f'{doc}: reference escapes standalone skill package: {target}')
-            require(resolved.exists(), f'{doc}: missing bundled reference: {target}')
+            require(resolved.is_relative_to(ROOT.resolve()),
+                    f'{doc}: reference escapes repository: {target}')
+            require(resolved.exists(), f'{doc}: missing reference: {target}')
 
 try:
     plugin = json.loads(read(ROOT / '.claude-plugin/plugin.json'))
@@ -95,5 +95,5 @@ for doc in [ROOT / 'README.md', ROOT / 'AGENTS.md', ROOT / 'CONTEXT.md']:
 if errors:
     print('\n'.join(f'ERROR: {error}' for error in errors), file=sys.stderr)
     raise SystemExit(1)
-print(f'PASS: {len(EXPECTED)} skill entries, invocation policies, standalone references, manifests, README and docs')
+print(f'PASS: {len(EXPECTED)} skill entries, invocation policies, repository references, manifests, README and docs')
 print('Static checks only; agent behavior and live installation are not exercised.')
