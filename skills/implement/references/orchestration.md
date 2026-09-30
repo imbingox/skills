@@ -2,6 +2,8 @@
 
 Parent mode 下主 session 只做 Controller：建图、派发、集成、推进状态；每个 child 由 Implementer sub-agent 实现，不把整张父票当成一份大实现。
 
+本模式依赖本地 commit 来审查与集成。用户要求“不提交”时，在创建分支或派发前说明这一限制，不创建 commit，也不将其解释为“只留集成分支”；等待用户明确允许本地提交或调整任务范围。用户要求“只留集成分支”则允许本地 commit，但不更新当前分支。
+
 ## 集成分支与集成 worktree
 
 - 首次执行时记录当前分支、起点 commit 和主工作区已有的未提交修改。这些修改只留在主工作区，不进入任何 worktree 或 commit。
@@ -52,7 +54,7 @@ Controller 在创建 worktree 后、派发 Implementer 前完成初始化。初�
    - child issue 全文，以及 parent spec 中相关约束；
    - worktree 路径、branch、基线 commit，以及 blockers 已完成的事实；
    - 环境初始化结果、开发验证指引的位置，以及本次范围对应的检查和前置条件（见上文）；
-   - 实现纪律：入口 SKILL.md 第 4 节、[tdd.md](tdd.md)，涉及设计时加 [codebase-design.md](codebase-design.md)，给路径或直接附内容；
+   - 实现纪律：[implementation.md](implementation.md)，写测试时加 [tdd.md](tdd.md)，涉及设计时加 [codebase-design.md](codebase-design.md)，给路径或直接附内容；
    - 要求：在自己的 branch 提交；不修改 tracker；返回 commits、运行过的验证命令与结果、未解决项。
 3. 核对 child branch 的 commits 确实基于基线 commit；配置有对应状态时标记 in-review。按 [review.md](review.md) 派一个**未参与该 child 实现的独立 Reviewer**，review 范围是基线 commit 到 child branch HEAD。
 4. review fail：findings 交回 Implementer 修复，再独立复审。原 Implementer 无法继续时，在同一 child worktree 上派新的 Implementer，附原 brief、当前 diff 和 findings。未通过的 child 不解锁下游。
@@ -97,8 +99,8 @@ integration review 通过后，在集成 worktree 中运行 parent-level tests /
 全部通过后：
 
 - **正常模式**：在主工作区执行 `git merge --ff-only implement/<parent>`，把当前分支快进到集成结果。当前分支已前进、或与主工作区的未提交修改冲突时，git 会拒绝：不要强制、不要 stash 用户修改，保留集成分支并报告。
-- **“不提交”模式**：开始时告知用户结果只留在本地分支 `implement/<parent>`，当前分支不动。
+- **“只留集成分支”模式**：结果只留在本地分支 `implement/<parent>`，当前分支不动。
 
-交付成功后删除集成 worktree（`git worktree remove`），按上文清理规则核对实际目录已删除；正常模式下再 `git branch -d implement/<parent>`，“不提交”模式保留该分支。最后按配置推进 parent 到终态，并核对本次创建的 worktree 都已清理，或已列入报告。
+交付成功后删除集成 worktree（`git worktree remove`），按上文清理规则核对实际目录已删除；正常模式下再 `git branch -d implement/<parent>`，“只留集成分支”模式保留该分支。最后核对项目完成条件是否已满足，再按配置推进 parent 到终态；若要求交付当前分支而尚未完成，则保留 parent 状态。核对本次创建的 worktree 都已清理，或已列入报告。
 
-快进失败或处于“不提交”模式时，已按配置完成的 child 在 tracker 上显示完成，代码却只在 `implement/<parent>` 上：最终报告必须明确写出这一点和该分支名。
+快进失败或处于“只留集成分支”模式时，已按配置完成的 child 在 tracker 上显示完成，代码却只在 `implement/<parent>` 上：最终报告必须明确写出这一点和该分支名。

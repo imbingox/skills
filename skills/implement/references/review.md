@@ -25,19 +25,11 @@ Reviewer 看不到 Controller 的上下文，所需材料都写进 brief：
 - **项目明文规则**：违反即 finding，引用规则出处；lint / formatter 已强制的不重复报告。
 - **新增复杂性**：是否重复已有代码、标准库或平台能力，是否引入没有当前用途的依赖、配置或扩展层。精简 finding 要给出位置、当前需求依据和行为等价的替代；不能仅凭单一调用方或能少几行判 fail，也不能以精简为由删除必要校验和测试。只看本次 diff 及其影响。
 - **测试**：是否经 public seam 观察行为，有无 [tdd.md](tdd.md) 中的反模式。
-- **坏味道基线**（Fowler《重构》第 3 章）：项目没有明文规则时也适用，但都是判断题，标注为“可能的 X”，不是硬违规；项目规则认可的写法不报。
-  - Mysterious Name：名字说不清做什么 → 改名；起不出好名字说明设计不清。
-  - Duplicated Code：同一逻辑形状在多处出现 → 抽出共用。
-  - Feature Envy：函数更多地使用另一个对象的数据 → 移到数据所在处。
-  - Data Clumps：几个字段 / 参数总是一起出现 → 合成一个类型。
-  - Primitive Obsession：用原始类型或字符串代替领域概念 → 给它一个小类型。
-  - Repeated Switches：针对同一类型的 switch / if 链反复出现 → 多态或共享一张映射。
-  - Shotgun Surgery：一个逻辑改动散到很多文件 → 把一起变化的收进一个模块。
-  - Divergent Change：一个模块因多种无关原因被修改 → 按变化原因拆开。
-  - Speculative Generality：spec 不需要的抽象、参数或钩子 → 删掉，等真实需求出现再加。
-  - Message Chains：调用方依赖 `a.b().c().d()` 式导航 → 在第一个对象上提供一个方法。
-  - Middle Man：主要只做转发的类或函数 → 去掉，直接调用目标。
-  - Refused Bequest：子类或实现者忽略大部分继承内容 → 改用组合。
+
+## 阻塞与建议
+
+正确性缺陷、验收或兼容承诺遗漏、项目明文规则违规，以及有具体影响的复杂性或测试问题才作为阻塞 finding。每项给出位置、依据和实际影响；有未解决的阻塞 finding 则该轴 fail，缺少必要输入或证据而无法判断则 blocked。
+命名偏好、可选重构和没有实际影响依据的代码坏味道仅作建议，不导致 fail，不要求为通过 review 扩大范围。两轴各自无阻塞问题且有足够依据时为 pass。
 
 ## Spec
 
@@ -50,9 +42,9 @@ Reviewer 看不到 Controller 的上下文，所需材料都写进 brief：
 ```text
 Reviewed: workspace / baseline / commit 或未提交 diff 范围
 Standards: pass | fail | blocked
-Findings: 严重程度、文件位置、规则依据或坏味道、影响
+Findings: 阻塞 / 建议、严重程度、文件位置、规则依据、影响
 Spec: pass | fail | blocked
-Findings: 严重程度、文件位置、spec 原文、影响
+Findings: 阻塞 / 建议、严重程度、文件位置、spec 原文、影响
 Verification gaps: 未运行或无法验证的检查
 ```
 
