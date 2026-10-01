@@ -1,6 +1,6 @@
 # Bingo Skills
 
-面向 agent 日常开发的中文工程工作流技能集。六个手动入口覆盖项目配置、需求澄清、spec、普通 / 快速实施和 bug 排查；`writing-for-agents` 提供可自动或手动调用的 agent 文档写作参考。
+面向 agent 日常开发的中文工程工作流技能集。七个手动入口覆盖项目配置、需求澄清、spec、普通 / 快速实施、验收后收尾和 bug 排查；`writing-for-agents` 提供可自动或手动调用的 agent 文档写作参考。
 
 ## 安装
 
@@ -10,7 +10,7 @@
 npx skills@latest add imbingox/skills -g
 ```
 
-项目级安装时去掉 `-g`。只安装部分入口时用 `--skill <name>` 指定，可选项为 `--skill setup`、`--skill grill`、`--skill to-spec`、`--skill implement`、`--skill fast-implement`、`--skill diagnosing-bugs`、`--skill writing-for-agents`，例如：
+项目级安装时去掉 `-g`。只安装部分入口时用 `--skill <name>` 指定，可选项为 `--skill setup`、`--skill grill`、`--skill to-spec`、`--skill implement`、`--skill fast-implement`、`--skill finish`、`--skill diagnosing-bugs`、`--skill writing-for-agents`，例如：
 
 ```bash
 npx skills@latest add imbingox/skills -g --skill setup --skill implement
@@ -61,8 +61,8 @@ GitHub / GitLab 的 open、closed 使用原生状态，只额外建立一个 `re
 
 | 场景 | 路径 | 信息放在哪里 |
 | --- | --- | --- |
-| 明确的小任务 | 对话聊清需求和方案 → `fast-implement` | 当前对话，无需 issue 或 spec |
-| 一般任务 | `grill` → `to-spec` 建 issue → 新会话 `implement` | issue 正文保存规格，评论保存实施与交接事实 |
+| 明确的小任务 | 对话聊清需求和方案 → `fast-implement` → 验收后按需 `finish` | 当前对话，无需 issue 或 spec |
+| 一般任务 | `grill` → `to-spec` 确认摘要后建 issue → 新会话 `implement` → 验收后按需 `finish` | issue 正文保存规格，评论保存实施与交接事实 |
 | 原因不明的故障 | `diagnosing-bugs` | 复现、实验和根因证据；不要求先建票 |
 
 小任务由当前 agent 实现、自查并运行必要验证；不自动建票、写评论、改标签或关闭 issue：
@@ -79,7 +79,7 @@ GitHub / GitLab 的 open、closed 使用原生状态，只额外建立一个 `re
 
 两个实施入口默认都允许本次范围的本地 commit，不自动 push、merge PR 或部署；可明确要求“不提交”。`fast-implement` 不编排子票，也不能替代项目强制的独立 review；范围扩大时会说明并建议切换入口。普通 `implement` 的 Parent 模式在调用时的当前分支和工作区集成，只为子任务创建独立 worktree；子任务验收后直接合回当前分支，再创建下游子任务。该模式依赖本地 commit 和合入，不支持“不提交”或“不更新当前分支”；用户已有修改阻挡合入时，保留子任务成果并报告。
 
-一般任务先讨论，再把已确认的方案和验收写入 issue：
+一般任务先讨论，再用 to-spec 展示 Proposed Changes。每项关键行为变化都带具体的前后示例，用户确认这份摘要后才生成完整 spec 并写入 issue；“只预览”也先确认摘要，再生成完整草稿。比如已确认的导出命名方案可以写成“目录已有 report.csv，再次导出：原来覆盖原文件 → 现在保留原文件并生成 report-2.csv”。新能力则展示当前限制或替代步骤与新用法：
 
 ```text
 /grill 增加导出功能，兼容现有 API
@@ -88,13 +88,25 @@ GitHub / GitLab 的 open、closed 使用原生状态，只额外建立一个 `re
 
 拿到实际 issue 编号后，新会话执行 `/implement #123`（替换为真实编号）。issue 应包含目标、方案、兼容约束、验收、范围边界和必要指针，新会话无需依赖原对话。普通任务一张 issue 即可；需要多个独立交付切片时才拆父子票，由 `implement` 自动编排。独立 review 与要求的验证通过后，按项目完成条件关闭。
 
+开发验收后，可调用独立的 `finish` 停止本任务的临时验收服务、提交剩余改动并关闭明确的目标任务。它会核对当前交付内容和完成证据，复用已完成的提交 / 关票；没有 issue 也可直接本地收尾，不需要先运行 setup。它不自动 push、merge PR 或部署，也不替代必需的独立 review 和验证。
+
+希望先人工验收、最后统一收尾时，可以明确把提交和关票留到 finish：
+
+```text
+/implement #123，提交和关票留到 finish
+/finish #123，已验收通过，停止本任务预览服务并提交、关闭任务
+```
+
+以上编号替换为真实目标。Leaf 会保留待提交改动；Parent 仍完成编排所需的子任务提交、合入与状态推进，只将父任务关票和剩余收尾留后。`fast-implement` 也支持把提交留到 finish。已有“不提交”“不关票”“保留服务”等限制在 finish 中继续生效，直到用户明确撤回；也可以用 `/finish 只检查` 查看尚缺的收尾条件。
+
 | 入口 | 用途 |
 | --- | --- |
 | [setup](skills/setup/SKILL.md) | 为当前项目配置工作流、领域文档与开发验证指引。 |
 | [grill](skills/grill/SKILL.md) | 澄清需求、外部行为、兼容范围和验收边界。 |
-| [to-spec](skills/to-spec/SKILL.md) | 固化需求为 spec，并按规模决定是否拆成子 tickets。可说“仅 spec”“只拆票 #123”或“只预览”。 |
+| [to-spec](skills/to-spec/SKILL.md) | 先确认带具体前后示例的 Proposed Changes，再生成 spec 并按需拆票。可说“仅 spec”“只拆票 #123”或“只预览”。 |
 | [implement](skills/implement/SKILL.md) | 按 issue、spec 或已明确的小任务实施并完成独立 review；有子票时通过当前 harness 的 sub-agent 自动编排。 |
 | [fast-implement](skills/fast-implement/SKILL.md) | 快速完成明确、局部的小任务，当前 agent 自查并验证；依赖 implement 的参考资源。 |
+| [finish](skills/finish/SKILL.md) | 开发验收后核对证据、停止临时验收服务、提交剩余修改并按项目配置关闭任务；可单独安装。 |
 | [diagnosing-bugs](skills/diagnosing-bugs/SKILL.md) | 从症状开始复现、定位和修复；可说“只排查”以仅输出根因与证据。 |
 | [writing-for-agents](skills/writing-for-agents/SKILL.md) | 编写或审查 skill、项目指令、spec、tickets 和 agent prompt；可自动触发，也可手动调用。 |
 
@@ -112,12 +124,12 @@ GitHub / GitLab 的 open、closed 使用原生状态，只额外建立一个 `re
 - 开发与验证指引放在项目原有 README / AGENTS / CLAUDE 中，能从脚本查明的命令不另建注册表。新增技术栈或改变命令时，由那次实施同步维护原指引和受影响的已有 CI；例如 Python 增加 TS 前端，要补前端检查但保留 Python 检查，无需重跑 setup。
 - 主动暂停、受阻或换 session 前，`implement` 将已完成 / 剩余、分支与 worktree、最近验证和下一步简短记录到原 issue 评论或已有本地票；未获写入授权或写入失败时只在对话交接。`fast-implement` 只在对话中交接。两者均不另建进度文件，恢复时先核对实际状态，不盲信旧记录，例如 `/implement 继续 #123`。
 
-六个工作流入口都需要手动调用。`writing-for-agents` 可在编写 agent 文档时自动选用，也可以直接调用：
+七个工作流入口都需要手动调用。`writing-for-agents` 可在编写 agent 文档时自动选用，也可以直接调用：
 
 ```text
 /writing-for-agents 检查这份 spec 是否能由新 session 独立执行
 ```
 
-项目的 tracker 位置和操作方式由该项目自己的配置决定。运行 `/setup` 后，`to-spec` 和 `implement` 按项目配置管理 issue；缺少远程 tracker 配置时，先运行 `/setup`。快速实施也须满足项目验证要求，不能把自查记为独立 review 通过。
+项目的 tracker 位置和操作方式由该项目自己的配置决定。运行 `/setup` 后，`to-spec`、`implement` 和 `finish` 按项目配置管理 issue；缺少远程 tracker 配置时，先运行 `/setup`。快速实施也须满足项目验证要求，不能把自查记为独立 review 通过。
 
 安装参数可查阅 [`skills` CLI 文档](https://github.com/vercel-labs/skills)。

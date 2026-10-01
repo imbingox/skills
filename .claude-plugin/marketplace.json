@@ -7,7 +7,7 @@
     {
       "name": "bingo-skills",
       "source": "./",
-      "description": "Setup, grill, spec, orchestrated or fast implementation, bug diagnosis, and agent-document writing guidance.",
+      "description": "Setup, grill, confirmed specs, orchestrated or fast implementation, finish, bug diagnosis, and agent-document writing guidance.",
       "category": "engineering",
       "keywords": [
         "engineering",

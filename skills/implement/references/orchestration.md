@@ -83,4 +83,4 @@ Controller 确认全部 child 已合入目标分支且主工作区没有未提�
 
 review fail 时：某个已验收 child 实际未满足自己的 contract，就按配置重新打开该 child；纯跨 child 的集成问题由 Controller 指派 integration fix，不偷偷改 parent spec。需要修复时，从目标分支当前 HEAD 创建新的修复子 worktree，走相同的实现、独立 review、合入和清理流程，不要求恢复已删除的子 worktree。
 
-integration review 通过后，在主工作区运行 parent-level tests / smoke / end-to-end verification，确认验证和审查覆盖同一目标 HEAD。全部通过且项目完成条件满足后才推进 parent 到终态，报告目标分支、实际 commits、验证和遗留子 worktree；不另执行父分支合入或删除主工作区。
+integration review 通过后，在主工作区运行 parent-level tests / smoke / end-to-end verification，确认验证和审查覆盖同一目标 HEAD。全部通过且项目完成条件满足后才推进 parent 到终态；用户要求父任务关票留到 finish 时，保留父状态并报告待办，不自动调用 finish。报告目标分支、实际 commits、验证和遗留子 worktree；不另执行父分支合入或删除主工作区。

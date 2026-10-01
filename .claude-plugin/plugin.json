@@ -1,7 +1,7 @@
 {
   "name": "bingo-skills",
-  "version": "1.5.0",
-  "description": "Chinese-first engineering workflows with independent review or fast self-review, plus agent-document writing guidance.",
+  "version": "1.6.0",
+  "description": "Chinese-first engineering workflows with confirmed specs, implementation, acceptance closeout, and agent-document writing guidance.",
   "author": {
     "name": "bingo"
   },
@@ -21,6 +21,7 @@
     "./skills/to-spec",
     "./skills/implement",
     "./skills/fast-implement",
+    "./skills/finish",
     "./skills/diagnosing-bugs",
     "./skills/writing-for-agents"
   ]

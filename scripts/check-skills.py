@@ -9,7 +9,7 @@ import sys
 from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-MANUAL = {'setup', 'grill', 'to-spec', 'implement', 'fast-implement', 'diagnosing-bugs'}
+MANUAL = {'setup', 'grill', 'to-spec', 'implement', 'fast-implement', 'finish', 'diagnosing-bugs'}
 AUTOMATIC = {'writing-for-agents'}
 EXPECTED = MANUAL | AUTOMATIC
 errors: list[str] = []

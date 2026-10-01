@@ -21,7 +21,7 @@ spec 记录整体目标与约束；ticket 是一次可独立验证的实施切�
 | T1 | 一个可独立验证的结果 | None |
 | T2 | 下一个结果 | T1 |
 
-与 Proposed Changes 一起确认粒度和必要依赖，不另开一轮完整访谈。
+在生成子票正文前，与包含具体 Before → After 示例的 Proposed Changes 一起确认粒度和必要依赖，不另开一轮完整访谈。
 已确认的拆分直接沿用；拆分不能增加未经确认的接口字段、默认值、兼容策略或实现范围。
 
 ## 每票正文
@@ -30,6 +30,7 @@ spec 记录整体目标与约束；ticket 是一次可独立验证的实施切�
 ## Proposed Changes
 - Change：本票交付的外部行为。
 - Contract / Compatibility：本票涉及的契约与兼容承诺，或 None。
+- Before → After：用同一具体输入 / 操作说明本票交付前后的可观察结果。
 
 ## Parent
 <父 spec 的真实引用；没有父 spec 时省略>

@@ -46,6 +46,7 @@ disable-model-invocation: true
 7. 按 tracker 配置推进完成状态。
 
 用户明确要求“不提交”时保留未提交修改并如实报告；若完成条件要求 commit，则不推进终态。
+用户明确要求“提交 / 关票留到 finish”时，Leaf 完成实现、review 与验证后保留相应动作待办，不自动调用 finish；后续明确调用 finish 执行这些待办即可，无需再次确认延期本身。Parent 仍须执行编排必需的子任务提交、合入和状态推进，仅延后父任务关票及剩余收尾；若用户要求连必要提交也延后，则按 Parent 的限制说明无法继续编排。
 当前 harness 无法启动独立 reviewer agent 时，可以完成实现和测试，但报告“等待独立 review”，不推进完成状态。
 
 ## 4. 实现纪律
@@ -78,4 +79,5 @@ disable-model-invocation: true
 - external contract / compatibility 的实际变化；
 - verification 证据；
 - commits 与实际交付分支；
+- 留供人工验收的临时服务 / watcher 的会话或 PID、启动命令与工作目录，以及待 finish 的动作；
 - 任何未解决或未验证事项。
