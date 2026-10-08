@@ -9,8 +9,8 @@ import sys
 from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-MANUAL = {'setup', 'grill', 'to-spec', 'implement', 'fast-implement', 'finish', 'diagnosing-bugs'}
-AUTOMATIC = {'writing-for-agents'}
+MANUAL = {'spec', 'finish'}
+AUTOMATIC: set[str] = set()
 EXPECTED = MANUAL | AUTOMATIC
 errors: list[str] = []
 
@@ -81,7 +81,8 @@ except (ValueError, KeyError, IndexError, TypeError) as exc:
 readme = read(ROOT / 'README.md')
 require(set(re.findall(r'\(skills/([\w-]+)/SKILL\.md\)', readme)) == EXPECTED,
         'README entry table differs from curated set')
-require(set(re.findall(r'--skill ([\w-]+)', readme)) == EXPECTED,
+own_installs = '\n'.join(line for line in readme.splitlines() if 'mattpocock/skills' not in line)
+require(set(re.findall(r'--skill ([\w-]+)', own_installs)) == EXPECTED,
         'README install command differs from curated set')
 
 for doc in [ROOT / 'README.md', ROOT / 'AGENTS.md', ROOT / 'CONTEXT.md']:
