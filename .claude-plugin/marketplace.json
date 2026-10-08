@@ -7,17 +7,17 @@
     {
       "name": "bingo-skills",
       "source": "./",
-      "description": "Setup, grill, confirmed specs, orchestrated or fast implementation, finish, bug diagnosis, and agent-document writing guidance.",
+      "description": "Reviewable specs over Matt Pocock's to-spec/to-tickets, plus acceptance closeout.",
       "category": "engineering",
       "keywords": [
         "engineering",
         "skills",
         "spec",
-        "setup"
+        "closeout"
       ]
     }
   ],
   "metadata": {
-    "description": "Bingo Skills: independently maintained engineering workflows."
+    "description": "Bingo Skills: Chinese enhancements layered on Matt Pocock's skills."
   }
 }
